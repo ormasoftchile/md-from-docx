@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DOCX Markdown Converter Settings",
+  "description": "Configuration schema for the docxMarkdownConverter VS Code extension",
+  "type": "object",
+  "properties": {
+    "docxMarkdownConverter.outputFolderStrategy": {
+      "type": "string",
+      "enum": ["sameFolder", "subFolder"],
+      "default": "sameFolder",
+      "description": "Where to place the output markdown file relative to the source",
+      "enumDescriptions": [
+        "Place markdown in the same folder as the source DOCX file",
+        "Create a subfolder named after the document for markdown and images"
+      ]
+    },
+    "docxMarkdownConverter.imagesFolderName": {
+      "type": "string",
+      "default": "{docname}_images",
+      "description": "Name pattern for the images folder. Use {docname} for the source document name.",
+      "pattern": "^[^/\\\\:*?\"<>|]+$"
+    },
+    "docxMarkdownConverter.imageFileNamePattern": {
+      "type": "string",
+      "default": "image-{index}",
+      "description": "Pattern for naming extracted image files. Use {index} for sequential numbering (e.g., 001, 002).",
+      "pattern": ".*\\{index\\}.*"
+    },
+    "docxMarkdownConverter.overwriteBehavior": {
+      "type": "string",
+      "enum": ["prompt", "overwrite", "skip", "rename"],
+      "default": "prompt",
+      "description": "How to handle existing output files",
+      "enumDescriptions": [
+        "Ask the user what to do when a file already exists",
+        "Automatically overwrite existing files without asking",
+        "Skip conversion if output file already exists",
+        "Automatically rename the output file to avoid conflicts"
+      ]
+    },
+    "docxMarkdownConverter.pasteTarget": {
+      "type": "string",
+      "enum": ["newFile", "currentEditor"],
+      "default": "newFile",
+      "description": "Where to place content when pasting from clipboard",
+      "enumDescriptions": [
+        "Create a new markdown file for the pasted content",
+        "Insert the converted markdown at the cursor in the current editor"
+      ]
+    },
+    "docxMarkdownConverter.openAfterConversion": {
+      "type": "boolean",
+      "default": true,
+      "description": "Automatically open the generated markdown file after conversion"
+    },
+    "docxMarkdownConverter.showNotifications": {
+      "type": "boolean",
+      "default": true,
+      "description": "Show success/error notifications after conversion"
+    }
+  },
+  "additionalProperties": false
+}

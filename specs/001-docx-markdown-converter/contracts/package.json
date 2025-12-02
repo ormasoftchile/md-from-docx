@@ -1,0 +1,149 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vscode/main/extensions/package.schema.json",
+  "name": "docx-markdown-converter",
+  "displayName": "DOCX to Markdown Converter",
+  "description": "Convert Word documents (.docx) to Markdown with automatic image extraction",
+  "version": "0.1.0",
+  "publisher": "your-publisher-id",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Formatters"
+  ],
+  "keywords": [
+    "docx",
+    "word",
+    "markdown",
+    "converter",
+    "document"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/docx-markdown-converter"
+  },
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "docxMarkdownConverter.convertFile",
+        "title": "DOCX: Convert to Markdown",
+        "category": "DOCX"
+      },
+      {
+        "command": "docxMarkdownConverter.pasteAsMarkdown",
+        "title": "Paste as Markdown (from Word)",
+        "category": "DOCX"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "docxMarkdownConverter.convertFile",
+          "when": "resourceExtname == .docx",
+          "group": "7_modification"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "docxMarkdownConverter.convertFile",
+          "when": "true"
+        },
+        {
+          "command": "docxMarkdownConverter.pasteAsMarkdown",
+          "when": "true"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "DOCX Markdown Converter",
+      "properties": {
+        "docxMarkdownConverter.outputFolderStrategy": {
+          "type": "string",
+          "enum": [
+            "sameFolder",
+            "subFolder"
+          ],
+          "default": "sameFolder",
+          "description": "Where to place the output markdown file relative to the source",
+          "enumDescriptions": [
+            "Place markdown in the same folder as the source DOCX file",
+            "Create a subfolder named after the document for markdown and images"
+          ]
+        },
+        "docxMarkdownConverter.imagesFolderName": {
+          "type": "string",
+          "default": "{docname}_images",
+          "description": "Name pattern for the images folder. Use {docname} for the source document name."
+        },
+        "docxMarkdownConverter.imageFileNamePattern": {
+          "type": "string",
+          "default": "image-{index}",
+          "description": "Pattern for naming extracted image files. Use {index} for sequential numbering."
+        },
+        "docxMarkdownConverter.overwriteBehavior": {
+          "type": "string",
+          "enum": [
+            "prompt",
+            "overwrite",
+            "skip",
+            "rename"
+          ],
+          "default": "prompt",
+          "description": "How to handle existing output files"
+        },
+        "docxMarkdownConverter.pasteTarget": {
+          "type": "string",
+          "enum": [
+            "newFile",
+            "currentEditor"
+          ],
+          "default": "newFile",
+          "description": "Where to place content when pasting from clipboard"
+        },
+        "docxMarkdownConverter.openAfterConversion": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically open the generated markdown file after conversion"
+        },
+        "docxMarkdownConverter.showNotifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show success/error notifications after conversion"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "watch": "npm run compile -- --watch",
+    "test": "jest",
+    "test:integration": "vscode-test",
+    "lint": "eslint src --ext ts",
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "mammoth": "^1.6.0",
+    "turndown": "^7.1.2",
+    "turndown-plugin-gfm": "^1.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^18.x",
+    "@types/vscode": "^1.85.0",
+    "@types/turndown": "^5.0.4",
+    "@vscode/test-electron": "^2.3.8",
+    "@vscode/vsce": "^2.22.0",
+    "esbuild": "^0.19.0",
+    "eslint": "^8.56.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.0",
+    "@types/jest": "^29.5.0",
+    "typescript": "^5.3.0"
+  }
+}

@@ -1,0 +1,29 @@
+# Ignore everything by default
+**
+
+# Include only what's needed
+!dist/extension.js
+!package.json
+!README.md
+!CHANGELOG.md
+!LICENSE
+!THIRD_PARTY_LICENSES.md
+!media/**
+
+# Exclude development files
+*.map
+*.ts
+*.md.bak
+.git/**
+.github/**
+.specify/**
+.vscode/**
+node_modules/**
+src/**
+test/**
+specs/**
+*.vsix
+.eslintrc.json
+tsconfig.json
+jest.config.js
+coverage/**

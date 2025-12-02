@@ -1,0 +1,215 @@
+# Quickstart: DOCX to Markdown Converter Development
+
+**Feature**: 001-docx-markdown-converter  
+**Date**: December 2, 2025
+
+## Prerequisites
+
+- **Node.js**: 18.x or later
+- **VS Code**: 1.85.0 or later
+- **npm**: 9.x or later (comes with Node.js)
+
+## Initial Setup
+
+### 1. Clone and Install
+
+```bash
+# Clone the repository
+git clone <repo-url> docx-markdown-converter
+cd docx-markdown-converter
+
+# Install dependencies
+npm install
+```
+
+### 2. Project Initialization
+
+If starting fresh, create the extension scaffold:
+
+```bash
+# Using VS Code's extension generator
+npm install -g yo generator-code
+yo code
+
+# Select:
+# - New Extension (TypeScript)
+# - Name: docx-markdown-converter
+# - Identifier: docx-markdown-converter
+# - Description: Convert Word documents to Markdown with images
+# - Enable JavaScript/TypeScript strict mode: Yes
+# - Bundle with esbuild: Yes
+# - Package manager: npm
+```
+
+### 3. Install Core Dependencies
+
+```bash
+# Production dependencies
+npm install mammoth turndown turndown-plugin-gfm
+
+# Dev dependencies (if not already installed by generator)
+npm install -D @types/turndown
+```
+
+## Development Workflow
+
+### Build & Watch
+
+```bash
+# One-time build
+npm run compile
+
+# Watch mode (rebuilds on changes)
+npm run watch
+```
+
+### Run Extension
+
+1. Open the project in VS Code
+2. Press `F5` to launch Extension Development Host
+3. In the new VS Code window:
+   - Open a folder containing `.docx` files
+   - Right-click a `.docx` file → "Convert DOCX to Markdown"
+   - Or: `Cmd+Shift+P` → "DOCX: Convert to Markdown"
+
+### Debug
+
+1. Set breakpoints in `src/` files
+2. Press `F5` to start debugging
+3. The debugger attaches automatically
+
+## Testing
+
+### Unit Tests
+
+```bash
+# Run all unit tests
+npm test
+
+# Run in watch mode
+npm test -- --watch
+
+# Run specific test file
+npm test -- docxParser.test.ts
+```
+
+### Integration Tests
+
+```bash
+# Run VS Code integration tests
+npm run test:integration
+```
+
+### Test Fixtures
+
+Place test `.docx` files in `test/fixtures/`:
+- `sample.docx` - Basic formatting (headings, bold, italic, lists)
+- `with-images.docx` - Document with embedded images
+- `with-tables.docx` - Document with tables
+- `large-document.docx` - 100+ pages for stress testing
+
+## Project Structure
+
+```
+├── src/
+│   ├── extension.ts          # Entry point
+│   ├── commands/             # VS Code command handlers
+│   ├── conversion/           # Core conversion logic (framework-agnostic)
+│   ├── webview/              # Clipboard capture UI
+│   ├── config/               # Settings management
+│   ├── utils/                # Shared utilities
+│   └── types/                # TypeScript interfaces
+├── test/
+│   ├── unit/                 # Jest unit tests
+│   ├── integration/          # VS Code integration tests
+│   └── fixtures/             # Test .docx files
+├── media/                    # Webview assets
+├── dist/                     # Compiled output (git-ignored)
+└── package.json              # Extension manifest
+```
+
+## Key Files to Implement (in order)
+
+1. **`src/types/index.ts`** - TypeScript interfaces (from data-model.md)
+2. **`src/conversion/docxParser.ts`** - Mammoth wrapper
+3. **`src/conversion/htmlToMarkdown.ts`** - Turndown wrapper
+4. **`src/conversion/imageExtractor.ts`** - Image handling
+5. **`src/conversion/index.ts`** - Pipeline orchestration
+6. **`src/config/settings.ts`** - VS Code settings reader
+7. **`src/commands/convertDocx.ts`** - File conversion command
+8. **`src/extension.ts`** - Command registration
+9. **`src/webview/clipboardCapture.ts`** - Webview for paste
+10. **`src/commands/pasteAsMarkdown.ts`** - Paste command
+
+## Common Commands
+
+```bash
+# Compile TypeScript
+npm run compile
+
+# Watch mode
+npm run watch
+
+# Run tests
+npm test
+
+# Lint code
+npm run lint
+
+# Package extension
+npm run package
+
+# Create VSIX for distribution
+npx vsce package
+```
+
+## Debugging Tips
+
+### View Extension Logs
+
+In the Extension Development Host:
+1. `View` → `Output`
+2. Select "DOCX Markdown Converter" from dropdown
+
+### Common Issues
+
+| Issue | Solution |
+|-------|----------|
+| Extension not loading | Check `package.json` activation events |
+| Command not found | Verify command ID matches in package.json and extension.ts |
+| Webview not showing | Check `enableScripts: true` in webview options |
+| Images not extracting | Verify mammoth `convertImage` callback |
+
+## VS Code Settings for Development
+
+`.vscode/settings.json`:
+```json
+{
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  }
+}
+```
+
+`.vscode/launch.json`:
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+      "preLaunchTask": "npm: watch"
+    }
+  ]
+}
+```
+
+## Next Steps
+
+After setup, proceed to implement tasks from `tasks.md` (generated by `/speckit.tasks`).
