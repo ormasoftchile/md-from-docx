@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline';">
+  <title>Paste from Word</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+      background-color: var(--vscode-editor-background, #1e1e1e);
+      color: var(--vscode-editor-foreground, #d4d4d4);
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      width: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    h1 {
+      font-size: 1.5em;
+      margin-bottom: 10px;
+      color: var(--vscode-foreground, #cccccc);
+    }
+
+    .instructions {
+      margin-bottom: 20px;
+      color: var(--vscode-descriptionForeground, #8b8b8b);
+      font-size: 0.9em;
+    }
+
+    .paste-area {
+      flex: 1;
+      min-height: 300px;
+      border: 2px dashed var(--vscode-input-border, #3c3c3c);
+      border-radius: 8px;
+      padding: 20px;
+      background-color: var(--vscode-input-background, #3c3c3c);
+      color: var(--vscode-input-foreground, #cccccc);
+      overflow: auto;
+      cursor: text;
+      transition: border-color 0.2s, background-color 0.2s;
+    }
+
+    .paste-area:focus {
+      outline: none;
+      border-color: var(--vscode-focusBorder, #007acc);
+      background-color: var(--vscode-inputOption-activeBackground, #2a2d2e);
+    }
+
+    .paste-area.has-content {
+      border-style: solid;
+    }
+
+    .paste-area::before {
+      content: 'Click here and paste your content (Ctrl+V / Cmd+V)';
+      color: var(--vscode-input-placeholderForeground, #6b6b6b);
+      pointer-events: none;
+    }
+
+    .paste-area.has-content::before {
+      content: '';
+    }
+
+    .status {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 0.9em;
+      display: none;
+    }
+
+    .status.success {
+      display: block;
+      background-color: var(--vscode-testing-iconPassed, #388a34);
+      color: white;
+    }
+
+    .status.error {
+      display: block;
+      background-color: var(--vscode-testing-iconFailed, #c72e2e);
+      color: white;
+    }
+
+    .status.info {
+      display: block;
+      background-color: var(--vscode-inputValidation-infoBackground, #063b49);
+      border: 1px solid var(--vscode-inputValidation-infoBorder, #007acc);
+    }
+
+    .button-container {
+      margin-top: 15px;
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.9em;
+      cursor: pointer;
+      background-color: var(--vscode-button-background, #0e639c);
+      color: var(--vscode-button-foreground, white);
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: var(--vscode-button-hoverBackground, #1177bb);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    button.secondary {
+      background-color: var(--vscode-button-secondaryBackground, #3a3d41);
+      color: var(--vscode-button-secondaryForeground, white);
+    }
+
+    button.secondary:hover {
+      background-color: var(--vscode-button-secondaryHoverBackground, #45494e);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📋 Paste from Word</h1>
+    <p class="instructions">
+      Copy content from Microsoft Word (or any rich text source), then paste it below. 
+      The content will be converted to Markdown with images extracted.
+    </p>
+    
+    <div 
+      class="paste-area" 
+      id="pasteArea" 
+      contenteditable="true" 
+      tabindex="0"
+    ></div>
+    
+    <div id="status" class="status"></div>
+    
+    <div class="button-container">
+      <button id="convertBtn" disabled>Convert to Markdown</button>
+      <button id="clearBtn" class="secondary">Clear</button>
+    </div>
+  </div>
+
+  <script>
+    // VS Code API
+    const vscode = acquireVsCodeApi();
+    
+    // DOM elements
+    const pasteArea = document.getElementById('pasteArea');
+    const statusDiv = document.getElementById('status');
+    const convertBtn = document.getElementById('convertBtn');
+    const clearBtn = document.getElementById('clearBtn');
+
+    // Captured data
+    let capturedHtml = '';
+    let capturedImages = [];
+
+    // Focus paste area on load
+    setTimeout(() => pasteArea.focus(), 100);
+
+    // Handle paste event
+    pasteArea.addEventListener('paste', (event) => {
+      event.preventDefault();
+      
+      const clipboardData = event.clipboardData;
+      if (!clipboardData) {
+        showStatus('error', 'Could not access clipboard data');
+        return;
+      }
+
+      // Try to get HTML content
+      const html = clipboardData.getData('text/html');
+      const plainText = clipboardData.getData('text/plain');
+
+      // Extract images from clipboard items
+      const images = [];
+      const items = clipboardData.items;
+      
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.startsWith('image/')) {
+          const blob = item.getAsFile();
+          if (blob) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              images.push({
+                dataUri: e.target.result,
+                index: images.length
+              });
+              updateConvertButton();
+            };
+            reader.readAsDataURL(blob);
+          }
+        }
+      }
+
+      if (html) {
+        // Rich content - process HTML
+        capturedHtml = html;
+        capturedImages = images;
+        
+        // Show preview in paste area
+        pasteArea.innerHTML = html;
+        pasteArea.classList.add('has-content');
+        
+        showStatus('success', `✓ Rich content captured. ${images.length > 0 ? `Found ${images.length} image(s).` : ''} Click "Convert to Markdown" to proceed.`);
+        convertBtn.disabled = false;
+        
+      } else if (plainText) {
+        // Plain text only
+        capturedHtml = '';
+        capturedImages = [];
+        
+        pasteArea.innerText = plainText;
+        pasteArea.classList.add('has-content');
+        
+        showStatus('info', 'Plain text pasted. This will be converted as-is (no formatting).');
+        
+        // Send plain text directly
+        vscode.postMessage({
+          type: 'paste',
+          payload: {
+            html: '',
+            plainText: plainText,
+            images: [],
+            hasRichContent: false
+          }
+        });
+        
+      } else {
+        showStatus('error', 'No content found in clipboard');
+      }
+    });
+
+    // Convert button click
+    convertBtn.addEventListener('click', () => {
+      if (!capturedHtml && capturedImages.length === 0) {
+        showStatus('error', 'No content to convert');
+        return;
+      }
+
+      // Extract embedded images from HTML (data URIs in img src)
+      const imgRegex = /<img[^>]+src="(data:image\/[^"]+)"[^>]*>/g;
+      let match;
+      const embeddedImages = [];
+      
+      while ((match = imgRegex.exec(capturedHtml)) !== null) {
+        embeddedImages.push({
+          dataUri: match[1],
+          index: embeddedImages.length
+        });
+      }
+
+      // Combine with directly pasted images
+      const allImages = [...capturedImages, ...embeddedImages];
+
+      // Send to extension
+      vscode.postMessage({
+        type: 'paste',
+        payload: {
+          html: capturedHtml,
+          images: allImages.map(img => img.dataUri),
+          hasRichContent: true
+        }
+      });
+
+      showStatus('success', 'Converting... Please wait.');
+      convertBtn.disabled = true;
+    });
+
+    // Clear button click
+    clearBtn.addEventListener('click', () => {
+      pasteArea.innerHTML = '';
+      pasteArea.classList.remove('has-content');
+      capturedHtml = '';
+      capturedImages = [];
+      convertBtn.disabled = true;
+      hideStatus();
+      pasteArea.focus();
+    });
+
+    // Helper functions
+    function showStatus(type, message) {
+      statusDiv.className = 'status ' + type;
+      statusDiv.textContent = message;
+    }
+
+    function hideStatus() {
+      statusDiv.className = 'status';
+    }
+
+    function updateConvertButton() {
+      convertBtn.disabled = !capturedHtml && capturedImages.length === 0;
+    }
+
+    // Handle messages from extension
+    window.addEventListener('message', (event) => {
+      const message = event.data;
+      
+      switch (message.type) {
+        case 'success':
+          showStatus('success', message.message || 'Conversion complete!');
+          break;
+        case 'error':
+          showStatus('error', message.message || 'Conversion failed');
+          convertBtn.disabled = false;
+          break;
+        case 'close':
+          // Extension will handle closing
+          break;
+      }
+    });
+  </script>
+</body>
+</html>
