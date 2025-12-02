@@ -161,7 +161,7 @@ export function htmlToMarkdown(html: string): string {
       // 1. Normalize whitespace
       // 2. Remove trailing page number (e.g., " 4" at end)
       // 3. Remove leading section number (e.g., "1 " or "1.2.3 " at start)
-      let cleanLinkText = linkText
+      const cleanLinkText = linkText
         .replace(/\s+/g, ' ')
         .trim()
         .replace(/\s+\d+$/, '')              // Remove trailing page number

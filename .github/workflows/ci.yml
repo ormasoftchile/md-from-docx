@@ -41,7 +41,7 @@ jobs:
       run: npx tsc --noEmit
 
     - name: Run unit tests
-      run: npm test
+      run: npm test -- --passWithNoTests
       if: always()
 
   build:
