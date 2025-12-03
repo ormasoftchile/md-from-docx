@@ -3,7 +3,7 @@
   "displayName": "DOCX to Markdown Converter",
   "description": "Convert Word documents (.docx) to Markdown with automatic image extraction",
   "version": "1.0.1",
-  "publisher": "ormasoftchile",
+  "publisher": "focus-space",
   "license": "MIT",
   "engines": {
     "vscode": "^1.85.0"
