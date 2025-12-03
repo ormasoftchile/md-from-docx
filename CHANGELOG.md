@@ -1,3 +1,20 @@
+# 1.0.0 (2025-12-03)
+
+
+### Bug Fixes
+
+* allow security audit to continue on error (dependency vulnerabilities) ([ae0660d](https://github.com/ormasoftchile/md-from-docx/commit/ae0660d580be4126785f1b6d0f5963e6dceea232))
+* ESLint prefer-const and Jest passWithNoTests ([d4a02c5](https://github.com/ormasoftchile/md-from-docx/commit/d4a02c555a7a99caa3aa662b0898076b4600d4f5))
+* remove duplicate continue-on-error ([6972775](https://github.com/ormasoftchile/md-from-docx/commit/6972775c4cbb3ff0aceea93fccaaf4cc409d0d8c))
+* update all Node.js versions to 22.x (required by semantic-release 25.x) ([7343f34](https://github.com/ormasoftchile/md-from-docx/commit/7343f34248d81731349714abeea3665ad9686ed2))
+* update dependencies to resolve all security vulnerabilities ([a06e6d5](https://github.com/ormasoftchile/md-from-docx/commit/a06e6d5a0d62930b70eec9047de6e854223315cb))
+* update Node.js version to 20.x (required by semantic-release deps) ([9823b07](https://github.com/ormasoftchile/md-from-docx/commit/9823b0723d8de83c1da5a3e996a477197828e512))
+
+
+### Features
+
+* initial implementation of DOCX to Markdown converter ([b697ece](https://github.com/ormasoftchile/md-from-docx/commit/b697ece88588ca5c1e257c3220a4219c656b14eb))
+
 # Changelog
 
 All notable changes to the "DOCX to Markdown Converter" extension will be documented in this file.
