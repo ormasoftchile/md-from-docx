@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/ormasoftchile/md-from-docx/compare/v1.0.1...v1.0.2) (2025-12-03)
+
+
+### Bug Fixes
+
+* correct publisher to focus-space ([b2cd912](https://github.com/ormasoftchile/md-from-docx/commit/b2cd912677e6622f633da7db6c7575dd51859dda))
+
 # 1.0.0 (2025-12-03)
 
 
