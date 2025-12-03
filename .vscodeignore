@@ -9,6 +9,7 @@
 !LICENSE
 !THIRD_PARTY_LICENSES.md
 !media/**
+!images/**
 
 # Exclude development files
 *.map
