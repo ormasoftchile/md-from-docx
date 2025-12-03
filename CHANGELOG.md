@@ -1,3 +1,15 @@
+# [1.1.0](https://github.com/ormasoftchile/md-from-docx/compare/v1.0.2...v1.1.0) (2025-12-03)
+
+
+### Bug Fixes
+
+* include images folder in vsix package ([f7cb280](https://github.com/ormasoftchile/md-from-docx/commit/f7cb2809ca776d8003bc58f6416d238984b10a92))
+
+
+### Features
+
+* add extension logo ([3140cf0](https://github.com/ormasoftchile/md-from-docx/commit/3140cf0278233c49cf70afe47bf0ba081a6363e5))
+
 ## [1.0.2](https://github.com/ormasoftchile/md-from-docx/compare/v1.0.1...v1.0.2) (2025-12-03)
 
 
