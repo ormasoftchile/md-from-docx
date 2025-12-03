@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <!-- Gradient for DOCX document -->
+    <linearGradient id="docxGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2B579A"/>
+      <stop offset="100%" style="stop-color:#1E3F6F"/>
+    </linearGradient>
+    <!-- Gradient for MD document -->
+    <linearGradient id="mdGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#42A5F5"/>
+      <stop offset="100%" style="stop-color:#1976D2"/>
+    </linearGradient>
+    <!-- Arrow gradient -->
+    <linearGradient id="arrowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#4CAF50"/>
+      <stop offset="100%" style="stop-color:#2E7D32"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="#1E1E1E"/>
+  <circle cx="64" cy="64" r="56" fill="#252526"/>
+  
+  <!-- DOCX Document (left) -->
+  <g transform="translate(12, 28)">
+    <!-- Document shape -->
+    <path d="M8,0 L32,0 L40,8 L40,56 L0,56 L0,8 Z" fill="url(#docxGrad)" rx="2"/>
+    <!-- Folded corner -->
+    <path d="M32,0 L32,8 L40,8 Z" fill="#1E3F6F" opacity="0.6"/>
+    <!-- W letter for Word -->
+    <text x="20" y="38" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="white" text-anchor="middle">W</text>
+  </g>
+  
+  <!-- Arrow -->
+  <g transform="translate(54, 48)">
+    <path d="M0,8 L12,8 L12,2 L22,12 L12,22 L12,16 L0,16 Z" fill="url(#arrowGrad)"/>
+  </g>
+  
+  <!-- MD Document (right) -->
+  <g transform="translate(76, 28)">
+    <!-- Document shape -->
+    <path d="M8,0 L32,0 L40,8 L40,56 L0,56 L0,8 Z" fill="url(#mdGrad)" rx="2"/>
+    <!-- Folded corner -->
+    <path d="M32,0 L32,8 L40,8 Z" fill="#1565C0" opacity="0.6"/>
+    <!-- MD text -->
+    <text x="20" y="32" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="white" text-anchor="middle">MD</text>
+    <!-- Markdown lines representation -->
+    <text x="20" y="46" font-family="monospace" font-size="10" fill="white" text-anchor="middle" opacity="0.8">#</text>
+  </g>
+  
+  <!-- Image icon (small) below arrow -->
+  <g transform="translate(56, 72)">
+    <rect x="0" y="0" width="16" height="12" rx="1" fill="#FF9800"/>
+    <circle cx="5" cy="4" r="2" fill="#FFF59D"/>
+    <path d="M2,10 L6,6 L9,9 L12,5 L14,10 Z" fill="#4CAF50"/>
+  </g>
+</svg>
