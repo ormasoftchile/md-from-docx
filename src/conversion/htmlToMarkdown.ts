@@ -35,15 +35,6 @@ function getTurndownService(): TurndownService {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     turndownService.use(gfm);
 
-    // Ensure GFM tables have highest priority - configure for clean markdown output
-    turndownService.addRule('gfmTables', {
-      filter: ['table'],
-      replacement: (content) => {
-        // GFM plugin handles conversion, just ensure spacing
-        return `\n\n${content}\n\n`;
-      },
-    });
-
     // Remove default image rule and add our custom one that encodes paths
     turndownService.remove('image');
     turndownService.addRule('encodedImages', {
@@ -121,18 +112,27 @@ export function htmlToMarkdown(html: string): string {
     return '';
   }
 
-  const service = getTurndownService();
-  let markdown = service.turndown(html);
+  // Normalize line endings to \n before processing
+  // Word Online and clipboard often have mixed \r\n, \r, or \n
+  let normalizedHtml = html
+    .replace(/\r\n/g, '\n')  // Windows CRLF → LF
+    .replace(/\r/g, '\n');   // Old Mac CR → LF
 
-  // Post-process: Strip any remaining inline styles/attributes that Word Online may have left
-  // Word Online sometimes embeds style attributes and spans that Turndown doesn't convert
-  // Match: <span style="...">content</span>, <div style="...">content</div>, etc.
-  markdown = markdown.replace(/<span[^>]*>([^<]*)<\/span>/gi, '$1');
-  markdown = markdown.replace(/<div[^>]*>([^<]*)<\/div>/gi, '$1');
+  const service = getTurndownService();
+  let markdown = service.turndown(normalizedHtml);
+
+  // Post-process: Strip only Word Online-specific artifacts, not general HTML
+  // These are specific to Word's clipboard HTML encoding that Turndown doesn't handle
   
-  // Strip Word-specific tags like <o:p></o:p>
-  markdown = markdown.replace(/<o:[^>]+>/gi, '');
-  markdown = markdown.replace(/<[!][^>]+>/gi, '');  // Strip conditional comments
+  // Strip Word-specific XML namespaced tags like <o:p></o:p>, <v:shapetype>, etc.
+  markdown = markdown.replace(/<[ov]:[^>]+>/gi, '');
+  
+  // Strip conditional comments from Word: <!--[if gte mso X]>...<![endif]-->
+  markdown = markdown.replace(/<!--\[if[^>]+\]>[\s\S]*?<!\[endif\]-->/gi, '');
+  
+  // Strip style attribute content but preserve the text
+  // Only for span/div when they're purely for styling (contain only style attribute)
+  markdown = markdown.replace(/<(span|div)\s+style="[^"]*">\s*([^<]*?)\s*<\/\1>/gi, '$2');
 
   // Post-process: fix image syntax - encode paths and clean alt text
   // Matches ![alt](path) or ![alt](path "title") including multi-line alt text
@@ -202,6 +202,8 @@ export function htmlToMarkdown(html: string): string {
   // Clean up excessive newlines
   const cleaned = markdown
     .replace(/\n{3,}/g, '\n\n') // Replace 3+ newlines with 2
+    .replace(/\r\n/g, '\n')      // Ensure consistent LF line endings
+    .replace(/\r/g, '\n')
     .trim();
 
   debug(`Converted HTML to Markdown: ${html.length} chars -> ${cleaned.length} chars`);
