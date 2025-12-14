@@ -467,11 +467,34 @@ Add T028-T044 (P3 + P4) = **17 additional tasks**
 - Still safe, incremental release after P1/P2 validation
 
 ### Full Scope (Release 2.0)
-Add T045-T065 (Testing + Polish) = **21 additional tasks**
-- Comprehensive edge case coverage
-- Real-world DOCX file validation
-- Performance benchmarks
-- Production-ready release
+## Phase 7: Testing & Polish (21 tasks)
+
+### Edge Case & Robustness Testing
+
+- [ ] T045 [P] Test corrupted/invalid .docx files - Verify error message is user-friendly and extension doesn't crash
+- [ ] T046 [P] Test empty .docx files - Verify empty Markdown created with notification
+- [ ] T047 [P] Test .docx with track changes - Verify content preserved or warned, no crashes
+- [ ] T048 [P] Test .docx with nested tables - Verify best-effort Markdown rendering
+- [ ] T049 [P] Test .docx with Unicode/special characters - Verify proper encoding and display
+- [ ] T050 [P] Test image filename collision handling - Verify sequential naming (image-001.png, etc.)
+- [ ] T051 [P] Test .docx with footnotes/endnotes - Verify preserved or warned
+- [ ] T052 [P] Test unsupported image formats - Verify graceful handling (skip + warning)
+- [ ] T053 [P] Test very large documents (100+ pages) - Verify progress notifications, no freezing, no OOM
+- [ ] T054 [P] Test webview paste cancellation - Verify no files created, clean exit
+- [ ] T055 [P] Test conversion with no workspace folder open - Verify prompt or graceful message
+
+### Integration & User Acceptance Testing
+
+- [ ] T056 [US1] Integration test: Explorer context menu with real-world complex DOCX - Verify all elements preserved
+- [ ] T057 [US2] Integration test: Command Palette with file picker - Verify file selected and converted
+- [ ] T058 [US3] Integration test: Clipboard paste with images - Verify images extracted and referenced
+- [ ] T059 [US4] Integration test: Settings applied across all user stories - Verify customization works end-to-end
+- [ ] T060 [P] Performance benchmark: Measure conversion time across document sizes - Verify <5 sec for 20-page doc
+- [ ] T061 [P] Cross-platform testing (Windows, macOS, Linux) - Verify path handling, file operations
+- [ ] T062 [P] Test error messages for clarity and actionability - Verify user can recover from errors
+- [ ] T063 [P] Test progress notifications don't interfere with editing - Verify non-blocking async
+- [ ] T064 [P] Test dependency versions for compatibility - Verify no breaking changes in Mammoth/Turndown
+- [ ] T065 [P] Final manual testing with 10+ real-world DOCX files - Verify robust end-to-end
 
 ---
 

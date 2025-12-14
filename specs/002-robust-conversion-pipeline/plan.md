@@ -115,6 +115,15 @@ tests/
 - `types/` = new shared interfaces
 - `utils/` = new error/progress utilities
 
+**Phase Reference**: This plan uses conceptual phases (0-6). The detailed task breakdown in `tasks.md` uses implementation phases (1-7) which map as follows:
+- Plan Phase 0-1 → Tasks Phase 1-2 (Setup + Foundational)
+- Plan Phase 2-3 → Tasks Phase 3-4 (Explorer + Command Palette)
+- Plan Phase 4 → Tasks Phase 5 (Clipboard Paste)
+- Plan Phase 5 → Tasks Phase 6 (Configuration)
+- Plan Phase 6 → Tasks Phase 7 (Testing & Polish)
+
+See `tasks.md` for the complete phase-by-phase breakdown and detailed task specifications.
+
 ## Implementation Phases
 
 ### Phase 0: Architecture & Research (2 days)
