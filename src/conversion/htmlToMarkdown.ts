@@ -102,6 +102,64 @@ function textToAnchor(text: string): string {
 }
 
 /**
+ * Converts an HTML table to GFM markdown format.
+ * @param tableHtml HTML table element
+ * @returns GFM markdown table or original HTML if parsing fails
+ */
+function convertHtmlTableToMarkdown(tableHtml: string): string {
+  try {
+    // Extract rows
+    const rowRegex = /<tr[^>]*>[\s\S]*?<\/tr>/gi;
+    const rows = tableHtml.match(rowRegex) || [];
+    
+    if (rows.length === 0) {
+      return tableHtml; // No rows found, return original
+    }
+
+    // Process each row
+    const markdownRows = rows.map((row) => {
+      // Extract cells (both th and td)
+      const cellRegex = /<t[hd][^>]*>[\s\S]*?<\/t[hd]>/gi;
+      const cells = row.match(cellRegex) || [];
+      
+      // Extract cell content and clean it
+      const cellContents = cells.map((cell) => {
+        // Remove the opening and closing tags
+        const content = cell
+          .replace(/<t[hd][^>]*>/i, '')
+          .replace(/<\/t[hd]>/i, '')
+          .trim()
+          // Remove remaining HTML tags
+          .replace(/<[^>]+>/g, '')
+          // Clean whitespace
+          .replace(/\s+/g, ' ')
+          .trim();
+        
+        return content;
+      });
+
+      // Return pipe-separated cells
+      return `| ${cellContents.join(' | ')} |`;
+    });
+
+    if (markdownRows.length === 0) {
+      return tableHtml;
+    }
+
+    // Build the table with header separator
+    const result = markdownRows[0] + '\n' +
+                   '| ' + markdownRows[0].split('|').slice(1, -1).map(() => '---').join(' | ') + ' |' +
+                   (markdownRows.length > 1 ? '\n' + markdownRows.slice(1).join('\n') : '');
+
+    debug(`Converted HTML table to GFM markdown: ${tableHtml.length} chars -> ${result.length} chars`);
+    return result;
+  } catch (err) {
+    debug(`Failed to convert HTML table: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    return tableHtml; // Return original on error
+  }
+}
+
+/**
  * Converts HTML to Markdown using Turndown with GFM support.
  * @param html HTML content to convert
  * @returns Markdown string
@@ -133,6 +191,12 @@ export function htmlToMarkdown(html: string): string {
   // Strip style attribute content but preserve the text
   // Only for span/div when they're purely for styling (contain only style attribute)
   markdown = markdown.replace(/<(span|div)\s+style="[^"]*">\s*([^<]*?)\s*<\/\1>/gi, '$2');
+
+  // Convert any remaining HTML tables to GFM markdown
+  // This catches tables that Turndown didn't convert
+  markdown = markdown.replace(/<table[^>]*>[\s\S]*?<\/table>/gi, (tableHtml) => {
+    return convertHtmlTableToMarkdown(tableHtml);
+  });
 
   // Post-process: fix image syntax - encode paths and clean alt text
   // Matches ![alt](path) or ![alt](path "title") including multi-line alt text
