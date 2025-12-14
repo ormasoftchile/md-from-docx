@@ -35,6 +35,21 @@ function getTurndownService(): TurndownService {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     turndownService.use(gfm);
 
+    // Override heading conversion to respect HTML heading levels
+    // Word Online might output Heading 2 as <h1>, so we need to track styles
+    turndownService.remove('heading');
+    turndownService.addRule('headings', {
+      filter: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+      replacement: (content, node) => {
+        const element = node as unknown as { nodeName?: string };
+        const tagName = element.nodeName?.toLowerCase() || 'h1';
+        // Extract heading level from tag name (h1 -> 1, h2 -> 2, etc.)
+        const level = parseInt(tagName.charAt(1), 10);
+        const hashes = '#'.repeat(Math.min(level, 6)); // Cap at H6
+        return `\n\n${hashes} ${content}\n\n`;
+      },
+    });
+
     // Remove default image rule and add our custom one that encodes paths
     turndownService.remove('image');
     turndownService.addRule('encodedImages', {
