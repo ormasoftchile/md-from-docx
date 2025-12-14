@@ -160,6 +160,57 @@ function convertHtmlTableToMarkdown(tableHtml: string): string {
 }
 
 /**
+ * Detects and fixes heading levels based on Word-style numbering patterns.
+ * Converts numbered outline structure (1, 1.1, 1.1.1) to proper heading levels.
+ * @param markdown Markdown content with headings
+ * @returns Markdown with corrected heading levels
+ */
+function fixHeadingLevelsFromNumbering(markdown: string): string {
+  const lines = markdown.split('\n');
+  const result: string[] = [];
+  const headingLevels = new Map<string, number>(); // Store detected level for each heading
+
+  for (const line of lines) {
+    // Match headings like "# Title" or "## Title"
+    const match = line.match(/^(#+)\s+(.+)$/);
+    if (!match) {
+      result.push(line);
+      continue;
+    }
+
+    const currentHashes = match[1];
+    const headingText = match[2].trim();
+
+    // Check if heading starts with Word numbering pattern (1, 1.1, 1.2, 1.1.1, etc.)
+    const numberMatch = headingText.match(/^([\d.]+)\s+(.+)$/);
+    if (numberMatch) {
+      const numbering = numberMatch[1];
+      const title = numberMatch[2];
+      const parts = numbering.split('.');
+      
+      // Determine heading level from numbering depth
+      // 1 -> H1 (#), 1.1 -> H2 (##), 1.1.1 -> H3 (###), etc.
+      const targetLevel = parts.length;
+      const targetHashes = '#'.repeat(Math.min(targetLevel, 6)); // Cap at H6
+
+      // Store this mapping for consistency
+      headingLevels.set(headingText, targetLevel);
+
+      if (currentHashes !== targetHashes) {
+        debug(`Adjusted heading level: "${numbering} ${title}" from ${currentHashes.length} to ${targetLevel}`);
+        result.push(`${targetHashes} ${headingText}`);
+      } else {
+        result.push(line);
+      }
+    } else {
+      result.push(line);
+    }
+  }
+
+  return result.join('\n');
+}
+
+/**
  * Converts HTML to Markdown using Turndown with GFM support.
  * @param html HTML content to convert
  * @returns Markdown string
@@ -240,6 +291,10 @@ export function htmlToMarkdown(html: string): string {
   // Match links like [1 INTRODUCCIÓN 4](#_Toc123456) - leading number is section, trailing is page
   // Remove these TOC links entirely since they don't work in markdown
   markdown = markdown.replace(/\[([^\]]+)\]\(#_[^)]+\)/g, '');
+
+  // Detect and fix heading levels from numbered outlines
+  // Word numbered lists (1, 1.1, 1.1.1) need to map to heading levels (H1, H2, H3)
+  markdown = fixHeadingLevelsFromNumbering(markdown);
 
   // Clean up excessive newlines and blank lines
   const cleaned = markdown
