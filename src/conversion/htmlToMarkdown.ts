@@ -238,35 +238,19 @@ export function htmlToMarkdown(html: string): string {
 
   // Fix TOC links: convert Word-style #_Toc... or #_heading... to proper anchors
   // Match links like [1 INTRODUCCIÓN 4](#_Toc123456) - leading number is section, trailing is page
-  markdown = markdown.replace(
-    /\[([^\]]+)\]\(#_[^)]+\)/g,
-    (fullMatch, linkText: string) => {
-      // Clean link text:
-      // 1. Normalize whitespace
-      // 2. Remove trailing page number (e.g., " 4" at end)
-      // 3. Remove leading section number (e.g., "1 " or "1.2.3 " at start)
-      const cleanLinkText = linkText
-        .replace(/\s+/g, ' ')
-        .trim()
-        .replace(/\s+\d+$/, '')              // Remove trailing page number
-        .replace(/^[\d.]+\s+/, '');          // Remove leading section number (1, 1.2, 1.2.3, etc.)
-      
-      const anchor = textToAnchor(cleanLinkText);
-      
-      if (anchor.length > 0) {
-        debug(`TOC link fixed: "${linkText}" -> "[${cleanLinkText}](#${anchor})"`);
-        return `[${cleanLinkText}](#${anchor})`;
-      }
-      
-      // Keep original if no valid anchor
-      return fullMatch;
-    }
-  );
+  // Remove these TOC links entirely since they don't work in markdown
+  markdown = markdown.replace(/\[([^\]]+)\]\(#_[^)]+\)/g, '');
 
-  // Clean up excessive newlines
+  // Clean up excessive newlines and blank lines
   const cleaned = markdown
-    .replace(/\n{3,}/g, '\n\n') // Replace 3+ newlines with 2
-    .replace(/\r\n/g, '\n')      // Ensure consistent LF line endings
+    .replace(/\n{3,}/g, '\n\n')      // Replace 3+ newlines with 2
+    .replace(/^\s*\n/gm, '')         // Remove blank lines at start of doc
+    .replace(/\n\s*$/gm, '')         // Remove blank lines at end
+    .split('\n')
+    .filter((line) => line.trim() !== '')  // Remove completely empty lines
+    .join('\n')
+    .replace(/\n\n\n+/g, '\n\n')     // Final pass: max 2 newlines
+    .replace(/\r\n/g, '\n')           // Ensure consistent LF line endings
     .replace(/\r/g, '\n')
     .trim();
 
