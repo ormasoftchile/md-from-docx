@@ -28,11 +28,21 @@ function getTurndownService(): TurndownService {
       emDelimiter: '*',
       strongDelimiter: '**',
       linkStyle: 'inlined',
+      preformattedCode: false, // Don't preserve HTML-formatted code
     });
 
     // Add GitHub Flavored Markdown support (tables, strikethrough, task lists)
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     turndownService.use(gfm);
+
+    // Ensure GFM tables have highest priority - configure for clean markdown output
+    turndownService.addRule('gfmTables', {
+      filter: ['table'],
+      replacement: (content) => {
+        // GFM plugin handles conversion, just ensure spacing
+        return `\n\n${content}\n\n`;
+      },
+    });
 
     // Remove default image rule and add our custom one that encodes paths
     turndownService.remove('image');
@@ -113,6 +123,16 @@ export function htmlToMarkdown(html: string): string {
 
   const service = getTurndownService();
   let markdown = service.turndown(html);
+
+  // Post-process: Strip any remaining inline styles/attributes that Word Online may have left
+  // Word Online sometimes embeds style attributes and spans that Turndown doesn't convert
+  // Match: <span style="...">content</span>, <div style="...">content</div>, etc.
+  markdown = markdown.replace(/<span[^>]*>([^<]*)<\/span>/gi, '$1');
+  markdown = markdown.replace(/<div[^>]*>([^<]*)<\/div>/gi, '$1');
+  
+  // Strip Word-specific tags like <o:p></o:p>
+  markdown = markdown.replace(/<o:[^>]+>/gi, '');
+  markdown = markdown.replace(/<[!][^>]+>/gi, '');  // Strip conditional comments
 
   // Post-process: fix image syntax - encode paths and clean alt text
   // Matches ![alt](path) or ![alt](path "title") including multi-line alt text
