@@ -1,0 +1,27 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit checks..."
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+echo "📝 Running ESLint..."
+npm run lint
+if [ $? -ne 0 ]; then
+  echo "❌ ESLint failed. Commit rejected."
+  exit 1
+fi
+
+echo "✅ ESLint passed"
+echo ""
+
+echo "🧪 Running tests..."
+npm test -- --bail
+if [ $? -ne 0 ]; then
+  echo "❌ Tests failed. Commit rejected."
+  exit 1
+fi
+
+echo "✅ Tests passed"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "✅ All checks passed! Proceeding with commit..."
