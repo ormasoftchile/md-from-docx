@@ -238,7 +238,7 @@ export function htmlToMarkdown(html: string): string {
 
   // Normalize line endings to \n before processing
   // Word Online and clipboard often have mixed \r\n, \r, or \n
-  let normalizedHtml = html
+  const normalizedHtml = html
     .replace(/\r\n/g, '\n')  // Windows CRLF → LF
     .replace(/\r/g, '\n');   // Old Mac CR → LF
 
