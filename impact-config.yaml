@@ -1,0 +1,58 @@
+# Spec-Kit Impact Analyzer Configuration
+# Project: DOCX to Markdown Converter
+
+project:
+  name: "DOCX to Markdown Converter"
+  type: "vscode-extension"
+  description: "VS Code extension to convert DOCX files to Markdown with image extraction"
+
+paths:
+  source: "src/"
+  tests: "test/"
+  specs: "specs/"
+  exclude:
+    - "node_modules"
+    - "out"
+    - "dist"
+    - ".vscode-test"
+
+classification:
+  boilerplate:
+    - "extension.ts"
+    - "types/**/*.ts"
+    - "config/**/*.ts"
+    
+  glue_code:
+    - "commands/**/*.ts"
+    - "utils/**/*.ts"
+    - "webview/**/*.ts"
+    
+  core_logic:
+    - "conversion/**/*.ts"
+
+multipliers:
+  boilerplate: 0.5
+  glue_code: 1.5
+  core_logic: 4.0
+
+ai_percent:
+  boilerplate: 90
+  glue_code: 70
+  core_logic: 30
+
+git:
+  session_gap_hours: 2
+  session_buffer_minutes: 30
+  exclude_authors:
+    - "semantic-release-bot"
+    - "github-actions[bot]"
+
+speckit:
+  enabled: true
+  task_pattern: "- \\[.\\] T[0-9]+"
+  specs_glob: "specs/**/tasks.md"
+
+output:
+  report_file: "IMPACT_REPORT.md"
+  json_file: "impact-metrics.json"
+  include_file_details: true
