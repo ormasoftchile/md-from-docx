@@ -15,7 +15,7 @@
 | **AI-Assisted LoC** | 769 (55%) |
 | **Estimated Manual Time** | 33.2h |
 | **Estimated Time Saved** | 14.4h (43%) |
-| **Actual Dev Time** | ~9.3h (3 sessions) |
+| **Actual Dev Time** | ~9.8h (4 sessions) |
 
 ---
 
@@ -36,15 +36,47 @@
 
 ---
 
+## 🧪 Test Code Impact
+
+| Metric | Value |
+|--------|-------|
+| **Test Files** | 12 |
+| **Test LoC** | 3558 |
+| **Test-to-Code Ratio** | 257.26% |
+| **AI-Assisted Test LoC** | 2668 (75%) |
+| **Est. Manual Test Time** | 53.3h |
+| **Test Time Saved** | 39.9h |
+
+### Testing Insights
+
+Writing comprehensive tests manually would have taken approximately **53.3h**. With AI assistance, an estimated **39.9h** was saved on test development alone.
+
+> **Test Effort Model**: Test code @ 1.5h/100 LoC, 75% AI-assisted
+> 
+> Tests are highly amenable to AI generation because they follow predictable patterns (arrange-act-assert) and AI excels at generating edge cases and boilerplate setup.
+
+---
+
+## 📊 Grand Total (Source + Tests)
+
+| Metric | Source | Tests | Combined |
+|--------|--------|-------|----------|
+| **Lines of Code** | 1383 | 3558 | 4941 |
+| **AI-Assisted** | 769 | 2668 | 3437 (69%) |
+| **Est. Manual Time** | 33.2h | 53.3h | 86.5h |
+| **Time Saved** | 14.4h | 39.9h | 54.3h |
+
+---
+
 ## ⏱️ Development Timeline
 
 | Metric | Value |
 |--------|-------|
 | **First Commit** | 2025-12-02 19:55:56 -0300 |
-| **Last Commit** | 2025-12-16 12:24:11 -0300 |
-| **Total Commits** | 33 |
-| **Dev Sessions** | 3 |
-| **Estimated Active Hours** | 9.3h |
+| **Last Commit** | 2026-01-08 16:54:06 -0300 |
+| **Total Commits** | 34 |
+| **Dev Sessions** | 4 |
+| **Estimated Active Hours** | 9.8h |
 
 ---
 
@@ -65,8 +97,8 @@
 ### Productivity Multiplier
 ```
 Traditional Development:  33.2h estimated
-AI-Assisted Development:  9.3h actual
-Productivity Gain:        ~3.5x faster
+AI-Assisted Development:  9.8h actual
+Productivity Gain:        ~3.3x faster
 ```
 
 ### Value of Spec-Kit Methodology
