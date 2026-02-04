@@ -6,7 +6,7 @@
 // Dynamically import vscode only when available
 let vscode: typeof import('vscode') | undefined;
 try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
   vscode = require('vscode');
 } catch {
   // Running outside VS Code (tests, CI, etc.)
