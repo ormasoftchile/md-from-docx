@@ -250,6 +250,7 @@ function fixHeadingLevelsFromNumbering(markdown: string): string {
 
 /**
  * Pre-processes HTML to remove Word-specific artifacts before conversion.
+ * Preserves images and meaningful content while removing styling noise.
  * @param html Raw HTML from clipboard
  * @returns Cleaned HTML ready for Turndown
  */
@@ -262,8 +263,10 @@ function preprocessHtml(html: string): string {
   // Remove <style> tags and their content
   cleaned = cleaned.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
 
-  // Remove HTML comments (Word puts style definitions in comments too)
-  cleaned = cleaned.replace(/<!--[\s\S]*?-->/g, '');
+  // Remove non-image HTML comments (Word puts style definitions in comments)
+  // But preserve conditional comments that might contain VML images
+  // Pattern: keep <!--[if...]>...<![endif]--> that contain v:image or v:shape with image
+  cleaned = cleaned.replace(/<!--(?!\[if)[\s\S]*?-->/g, '');
 
   // Remove <meta> tags
   cleaned = cleaned.replace(/<meta[^>]*>/gi, '');
@@ -275,10 +278,19 @@ function preprocessHtml(html: string): string {
   cleaned = cleaned.replace(/<\?xml[^>]*\?>/gi, '');
   cleaned = cleaned.replace(/xmlns[^=]*="[^"]*"/gi, '');
 
-  // Remove Word-specific XML tags (o:p, v:shapetype, w:*, etc.)
-  cleaned = cleaned.replace(/<[ovw]:[^>]+>[\s\S]*?<\/[ovw]:[^>]+>/gi, '');
-  cleaned = cleaned.replace(/<[ovw]:[^>]*\/>/gi, '');
-  cleaned = cleaned.replace(/<\/?[ovw]:[^>]*>/gi, '');
+  // Remove Word-specific XML tags EXCEPT those containing images
+  // Keep v:imagedata, v:shape with imagedata, o:OLEObject (embedded objects)
+  // Remove empty v:shapetype, w:* formatting tags
+  cleaned = cleaned.replace(/<w:[^>]+>[\s\S]*?<\/w:[^>]+>/gi, '');
+  cleaned = cleaned.replace(/<w:[^>]*\/>/gi, '');
+  cleaned = cleaned.replace(/<\/?w:[^>]*>/gi, '');
+  
+  // Remove v:shapetype definitions (templates, not actual content)
+  cleaned = cleaned.replace(/<v:shapetype[^>]*>[\s\S]*?<\/v:shapetype>/gi, '');
+  
+  // Remove o:p (paragraph markers) but keep o:OLEObject
+  cleaned = cleaned.replace(/<o:p[^>]*>[\s\S]*?<\/o:p>/gi, '');
+  cleaned = cleaned.replace(/<o:p[^>]*\/>/gi, '');
 
   // Remove class and style attributes that are Word-specific (Mso*)
   cleaned = cleaned.replace(/\s+class="[^"]*Mso[^"]*"/gi, '');
