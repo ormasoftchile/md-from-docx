@@ -153,13 +153,65 @@ function getTurndownService(): TurndownService {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (node.nodeName !== 'DIV') return false;
         const className = (node as unknown as TurndownNode).getAttribute('class') || '';
-        return className.includes('metric-card') || 
-               className.includes('insight-card');
+        return className.includes('metric-card');
       },
       replacement: (content) => {
         // Format as a blockquote to preserve the card-like appearance
         const lines = content.trim().split('\n').filter(line => line.trim());
         const formatted = lines.map(line => `> ${line.trim()}`).join('\n');
+        return `\n\n${formatted}\n\n`;
+      },
+    });
+
+    // Handle insight cards - these have icon + h4 + p structure
+    // We need to combine the icon with the heading on the same line
+    turndownService.addRule('insightCards', {
+      filter: (node) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        if (node.nodeName !== 'DIV') return false;
+        const className = (node as unknown as TurndownNode).getAttribute('class') || '';
+        return className.includes('insight-card');
+      },
+      replacement: (content) => {
+        // Content arrives as: emoji \n\n #### Title \n\n description
+        // We need to combine emoji with title as: emoji **Title**
+        const lines = content.trim().split('\n').filter(line => line.trim());
+        const result: string[] = [];
+        
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+          
+          // Check if this is an emoji-only line (1-4 chars)
+          // Emojis can be 1-4 chars due to combining characters
+          const isEmojiLine = line.length <= 4 && !/^[a-zA-Z0-9#]/.test(line);
+          
+          if (isEmojiLine) {
+            // Look ahead for the next h4 heading (#### ...)
+            for (let j = i + 1; j < lines.length; j++) {
+              const nextLine = lines[j].trim();
+              if (nextLine.startsWith('####')) {
+                // Found heading - combine emoji with title as bold
+                const title = nextLine.replace(/^#{1,6}\s*/, '');
+                result.push(`${line} **${title}**`);
+                i = j; // Skip to after the heading
+                break;
+              } else if (nextLine.length > 0 && !nextLine.startsWith('#')) {
+                // Hit non-heading content, just add emoji alone
+                result.push(line);
+                break;
+              }
+            }
+          } else if (line.startsWith('####')) {
+            // Standalone heading without preceding emoji - convert to bold
+            const title = line.replace(/^#{1,6}\s*/, '');
+            result.push(`**${title}**`);
+          } else {
+            // Regular content (description paragraph)
+            result.push(line);
+          }
+        }
+        
+        const formatted = result.map(line => `> ${line}`).join('\n');
         return `\n\n${formatted}\n\n`;
       },
     });
@@ -384,31 +436,48 @@ export function htmlToMarkdown(html: string): string {
 
   // Extract content from iframe srcdoc attributes (Loop/Teams embeds content this way)
   // The srcdoc contains HTML-escaped content that we need to decode and inline
-  const iframeSrcdocRegex = /<iframe[^>]*\ssrcdoc="([^"]+)"[^>]*>[\s\S]*?<\/iframe>/gi;
-  let srcdocMatch;
-  while ((srcdocMatch = iframeSrcdocRegex.exec(normalizedHtml)) !== null) {
-    const escapedContent = srcdocMatch[1];
-    // Decode the HTML-escaped srcdoc content
-    let decodedContent = escapedContent
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&amp;/g, '&')
-      .replace(/&#39;/g, "'");
-    
-    // Extract just the body content, stripping doctype/html/head/style
-    const bodyMatch = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(decodedContent);
-    if (bodyMatch) {
-      decodedContent = bodyMatch[1];
+  // Use a more robust regex that handles very long srcdoc content
+  normalizedHtml = normalizedHtml.replace(
+    /<iframe[^>]*\ssrcdoc="([\s\S]*?)"[^>]*>[\s\S]*?<\/iframe>/gi,
+    (_match: string, escapedContent: string) => {
+      // Decode the HTML-escaped srcdoc content
+      let decodedContent = escapedContent
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&amp;/g, '&')
+        .replace(/&#39;/g, "'");
+      
+      // Extract just the body content, stripping doctype/html/head/style
+      const bodyMatch = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(decodedContent);
+      if (bodyMatch) {
+        decodedContent = bodyMatch[1];
+      }
+      // Remove style tags from extracted content
+      decodedContent = decodedContent.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+      
+      // Convert Loop insight cards at iframe extraction time
+      // Pattern: <div class="insight-card"><span class="icon">EMOJI</span><h4>Title</h4><p>Description</p></div>
+      decodedContent = decodedContent.replace(
+        /<div[^>]*class="[^"]*insight-card[^"]*"[^>]*>\s*<span[^>]*class="[^"]*icon[^"]*"[^>]*>([^<]+)<\/span>\s*<h4>([^<]+)<\/h4>\s*<p>([\s\S]*?)<\/p>\s*<\/div>/gi,
+        (_m: string, icon: string, title: string, description: string) => {
+          // Decode HTML entities in content
+          const decodeEntities = (s: string) => s
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'");
+          return `<blockquote><strong>${icon.trim()} ${decodeEntities(title.trim())}</strong><br/>${decodeEntities(description.trim())}</blockquote>`;
+        }
+      );
+      
+      // Remove insights-container wrapper
+      decodedContent = decodedContent.replace(/<div[^>]*class="[^"]*insights-container[^"]*"[^>]*>/gi, '');
+      
+      return decodedContent;
     }
-    // Remove style tags from extracted content
-    decodedContent = decodedContent.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
-    
-    // Replace the iframe with its decoded content
-    normalizedHtml = normalizedHtml.replace(srcdocMatch[0], decodedContent);
-  }
-  // Reset regex lastIndex since we modified the string
-  iframeSrcdocRegex.lastIndex = 0;
+  );
 
   // Decode HTML entities that are double-encoded HTML tags from Loop/Teams
   // Only decode if we detect escaped HTML tag patterns (e.g., &lt;div class=&quot;)
@@ -430,8 +499,25 @@ export function htmlToMarkdown(html: string): string {
       }
     );
     
-    // Remove the metrics-container wrapper
+    // Convert Loop insight cards to markdown BEFORE Turndown
+    // Pattern: <div class="insight-card"><span class="icon">EMOJI</span><h4>Title</h4><p>Description</p></div>
+    normalizedHtml = normalizedHtml.replace(
+      /<div[^>]*class="[^"]*insight-card[^"]*"[^>]*>\s*<span[^>]*class="[^"]*icon[^"]*"[^>]*>([^<]+)<\/span>\s*<h4>([^<]+)<\/h4>\s*<p>([\s\S]*?)<\/p>\s*<\/div>/gi,
+      (_match: string, icon: string, title: string, description: string) => {
+        // Decode HTML entities in content
+        const decodeEntities = (s: string) => s
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'");
+        return `<blockquote><strong>${icon.trim()} ${decodeEntities(title.trim())}</strong><br/>${decodeEntities(description.trim())}</blockquote>`;
+      }
+    );
+    
+    // Remove the metrics-container and insights-container wrappers
     normalizedHtml = normalizedHtml.replace(/<div[^>]*class="[^"]*metrics-container[^"]*"[^>]*>/gi, '');
+    normalizedHtml = normalizedHtml.replace(/<div[^>]*class="[^"]*insights-container[^"]*"[^>]*>/gi, '');
     normalizedHtml = normalizedHtml.replace(/<\/div>\s*<\/body>\s*<\/html>"\s*>/gi, '');
     
     // Remove any remaining style tags that got decoded
@@ -441,6 +527,10 @@ export function htmlToMarkdown(html: string): string {
     normalizedHtml = normalizedHtml.replace(/<\/?body[^>]*>/gi, '');
     normalizedHtml = normalizedHtml.replace(/<\/?html[^>]*>/gi, '');
   }
+
+  // Remove any remaining iframe elements (including those with srcdoc we've already extracted)
+  normalizedHtml = normalizedHtml.replace(/<iframe[^>]*>[\s\S]*?<\/iframe>/gi, '');
+  normalizedHtml = normalizedHtml.replace(/<iframe[^>]*\/>/gi, '');
 
   // Pre-process to remove Word artifacts
   normalizedHtml = preprocessHtml(normalizedHtml);
