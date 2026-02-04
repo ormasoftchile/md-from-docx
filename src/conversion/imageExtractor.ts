@@ -45,7 +45,7 @@ export function dataUriToBuffer(dataUri: string): Buffer {
  * @param inputFormat Original image format
  * @returns Web-safe output format
  */
-export function normalizeFormat(inputFormat: string): 'png' | 'jpeg' | 'gif' {
+export function normalizeFormat(inputFormat: string): 'png' | 'jpeg' | 'gif' | 'svg' {
   const format = inputFormat.toLowerCase();
 
   if (format === 'jpg' || format === 'jpeg') {
@@ -53,6 +53,9 @@ export function normalizeFormat(inputFormat: string): 'png' | 'jpeg' | 'gif' {
   }
   if (format === 'gif') {
     return 'gif';
+  }
+  if (format === 'svg+xml' || format === 'svg') {
+    return 'svg';
   }
 
   // Convert all other formats (including emf, wmf, bmp, tiff) to PNG
@@ -82,7 +85,7 @@ export function formatImageIndex(index: number): string {
 export function generateImageFilename(
   pattern: string,
   index: number,
-  format: 'png' | 'jpeg' | 'gif'
+  format: 'png' | 'jpeg' | 'gif' | 'svg'
 ): string {
   const paddedIndex = formatImageIndex(index);
   const name = pattern.replace('{index}', paddedIndex);
