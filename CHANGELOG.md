@@ -1,3 +1,10 @@
+## [1.1.9](https://github.com/ormasoftchile/md-from-docx/compare/v1.1.8...v1.1.9) (2026-02-04)
+
+
+### Bug Fixes
+
+* make deploy step non-blocking [skip ci] ([5185fdf](https://github.com/ormasoftchile/md-from-docx/commit/5185fdf74de5c5cfd1b26d60acf7bc5887045850))
+
 # [1.1.0](https://github.com/ormasoftchile/md-from-docx/compare/v1.0.2...v1.1.0) (2025-12-03)
 
 
