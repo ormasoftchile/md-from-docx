@@ -94,6 +94,29 @@ function getTurndownService(): TurndownService {
       },
     });
 
+    // Handle superscript elements (footnote references)
+    // Convert <sup>1</sup> to [^1] for markdown footnote syntax
+    turndownService.addRule('superscript', {
+      filter: 'sup',
+      replacement: (content) => {
+        // If it's a number, treat it as a footnote reference
+        const trimmed = content.trim();
+        if (/^\d+$/.test(trimmed)) {
+          return `[^${trimmed}]`;
+        }
+        // Otherwise preserve as superscript using HTML or just inline
+        return `^${trimmed}^`;
+      },
+    });
+
+    // Handle subscript elements
+    turndownService.addRule('subscript', {
+      filter: 'sub',
+      replacement: (content) => {
+        return `~${content.trim()}~`;
+      },
+    });
+
     debug('TurndownService initialized with GFM plugin');
   }
 
@@ -226,6 +249,50 @@ function fixHeadingLevelsFromNumbering(markdown: string): string {
 }
 
 /**
+ * Pre-processes HTML to remove Word-specific artifacts before conversion.
+ * @param html Raw HTML from clipboard
+ * @returns Cleaned HTML ready for Turndown
+ */
+function preprocessHtml(html: string): string {
+  let cleaned = html;
+
+  // Remove entire <head> section (contains Word styles and metadata)
+  cleaned = cleaned.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '');
+
+  // Remove <style> tags and their content
+  cleaned = cleaned.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+
+  // Remove HTML comments (Word puts style definitions in comments too)
+  cleaned = cleaned.replace(/<!--[\s\S]*?-->/g, '');
+
+  // Remove <meta> tags
+  cleaned = cleaned.replace(/<meta[^>]*>/gi, '');
+
+  // Remove <link> tags (stylesheets)
+  cleaned = cleaned.replace(/<link[^>]*>/gi, '');
+
+  // Remove XML namespace declarations and processing instructions
+  cleaned = cleaned.replace(/<\?xml[^>]*\?>/gi, '');
+  cleaned = cleaned.replace(/xmlns[^=]*="[^"]*"/gi, '');
+
+  // Remove Word-specific XML tags (o:p, v:shapetype, w:*, etc.)
+  cleaned = cleaned.replace(/<[ovw]:[^>]+>[\s\S]*?<\/[ovw]:[^>]+>/gi, '');
+  cleaned = cleaned.replace(/<[ovw]:[^>]*\/>/gi, '');
+  cleaned = cleaned.replace(/<\/?[ovw]:[^>]*>/gi, '');
+
+  // Remove class and style attributes that are Word-specific (Mso*)
+  cleaned = cleaned.replace(/\s+class="[^"]*Mso[^"]*"/gi, '');
+  cleaned = cleaned.replace(/\s+style="[^"]*mso-[^"]*"/gi, '');
+
+  // Clean up empty style attributes
+  cleaned = cleaned.replace(/\s+style=""/gi, '');
+  cleaned = cleaned.replace(/\s+class=""/gi, '');
+
+  debug(`Preprocessed HTML: ${html.length} chars -> ${cleaned.length} chars`);
+  return cleaned;
+}
+
+/**
  * Converts HTML to Markdown using Turndown with GFM support.
  * @param html HTML content to convert
  * @returns Markdown string
@@ -238,9 +305,12 @@ export function htmlToMarkdown(html: string): string {
 
   // Normalize line endings to \n before processing
   // Word Online and clipboard often have mixed \r\n, \r, or \n
-  const normalizedHtml = html
+  let normalizedHtml = html
     .replace(/\r\n/g, '\n')  // Windows CRLF → LF
     .replace(/\r/g, '\n');   // Old Mac CR → LF
+
+  // Pre-process to remove Word artifacts
+  normalizedHtml = preprocessHtml(normalizedHtml);
 
   const service = getTurndownService();
   let markdown = service.turndown(normalizedHtml);
@@ -311,15 +381,12 @@ export function htmlToMarkdown(html: string): string {
   // Word numbered lists (1, 1.1, 1.1.1) need to map to heading levels (H1, H2, H3)
   markdown = fixHeadingLevelsFromNumbering(markdown);
 
-  // Clean up excessive newlines and blank lines
+  // Clean up excessive newlines while preserving paragraph breaks
   const cleaned = markdown
-    .replace(/\n{3,}/g, '\n\n')      // Replace 3+ newlines with 2
-    .replace(/^\s*\n/gm, '')         // Remove blank lines at start of doc
-    .replace(/\n\s*$/gm, '')         // Remove blank lines at end
-    .split('\n')
-    .filter((line) => line.trim() !== '')  // Remove completely empty lines
-    .join('\n')
-    .replace(/\n\n\n+/g, '\n\n')     // Final pass: max 2 newlines
+    .replace(/\n{4,}/g, '\n\n\n')     // Replace 4+ newlines with 3 (one blank line)
+    .replace(/^\s*\n/, '')            // Remove blank lines at start of doc
+    .replace(/\n\s*$/, '')            // Remove blank lines at end
+    .replace(/\n{3,}/g, '\n\n')       // Final pass: max 2 newlines (one blank line)
     .replace(/\r\n/g, '\n')           // Ensure consistent LF line endings
     .replace(/\r/g, '\n')
     .trim();

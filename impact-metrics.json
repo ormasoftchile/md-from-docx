@@ -1,61 +1,70 @@
 {
-  "version": "1.0.0",
-  "generated": "2026-01-09T01:51:03Z",
+  "version": "2.0.0",
+  "time": {
+    "estimated_manual_hours": 59.3,
+    "saved_hours": 55.6,
+    "actual_hours": 3.7,
+    "saved_percent": 93.0
+  },
+  "git": {
+    "total_commits": 36,
+    "sessions": 10,
+    "last_commit": "2026-01-16 16:53:32 -0300",
+    "first_commit": "2025-12-02 19:55:56 -0300"
+  },
+  "speckit": {
+    "tasks_total": 152,
+    "specs_path": "C:\\One\\OpenSource\\md-from-docx\\specs",
+    "tasks_complete": 66,
+    "spec_lines": 2392
+  },
+  "classification": {
+    "core_logic": {
+      "loc": 553,
+      "files": 4
+    },
+    "boilerplate": {
+      "loc": 119,
+      "files": 3
+    },
+    "glue_code": {
+      "loc": 711,
+      "files": 7
+    }
+  },
+  "generated": "2026-01-28T20:55:51Z",
   "project": {
     "name": "DOCX to Markdown Converter",
     "type": "vscode-extension"
   },
   "code": {
-    "total_loc": 1383,
-    "total_files": 14,
     "comments": 632,
-    "blank": 310
-  },
-  "tests": {
-    "loc": 3558,
-    "files": 12,
-    "ratio_percent": 257.26,
-    "ai_loc": 2668,
-    "ai_percent": 75,
-    "est_manual_hours": 53.3,
-    "saved_hours": 39.9
-  },
-  "classification": {
-    "boilerplate": { "files": 3, "loc": 119 },
-    "glue_code": { "files": 7, "loc": 711 },
-    "core_logic": { "files": 4, "loc": 553 }
+    "total_files": 14,
+    "blank": 310,
+    "total_loc": 1383
   },
   "ai_assisted": {
-    "total_loc": 769,
-    "percent": 55,
     "by_category": {
-      "boilerplate": 107,
-      "glue_code": 497,
-      "core_logic": 165
-    }
-  },
-  "time": {
-    "estimated_manual_hours": 33.2,
-    "estimated_saved_hours": 14.4,
-    "saved_percent": 43,
-    "actual_hours": 9.8
+      "core_logic": 165.0,
+      "boilerplate": 107.0,
+      "glue_code": 497.0
+    },
+    "percent": 55.0,
+    "total_loc": 769.0
   },
   "grand_total": {
-    "loc": 4941,
-    "ai_loc": 3437,
-    "ai_percent": 69,
-    "est_manual_hours": 86.5,
-    "saved_hours": 54.3
+    "est_manual_hours": 59.3,
+    "ai_percent": 66.0,
+    "ai_loc": 2062.0,
+    "loc": 3108
   },
-  "git": {
-    "first_commit": "2025-12-02 19:55:56 -0300",
-    "last_commit": "2026-01-08 16:54:06 -0300",
-    "total_commits": 34,
-    "sessions": 4
-  },
-  "speckit": {
-    "spec_lines": 2392,
-    "tasks_total": 152,
-    "tasks_complete": 66
+  "tests": {
+    "saved_hours": 19.4,
+    "est_manual_hours": 25.9,
+    "ai_loc": 1293.0,
+    "ai_percent": 75,
+    "ratio_percent": 124.73,
+    "loc": 1725,
+    "files": 6
   }
 }
