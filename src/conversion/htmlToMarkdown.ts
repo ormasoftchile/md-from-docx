@@ -117,6 +117,35 @@ function getTurndownService(): TurndownService {
       },
     });
 
+    // Handle TL;DR cards from Loop/Teams - convert to blockquotes
+    turndownService.addRule('tldrCards', {
+      filter: (node) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        if (node.nodeName !== 'DIV') return false;
+        const className = (node as unknown as TurndownNode).getAttribute('class') || '';
+        return className.includes('tldr-card');
+      },
+      replacement: (content) => {
+        // Format as a blockquote to preserve the card-like appearance
+        const lines = content.trim().split('\n').filter(line => line.trim());
+        const formatted = lines.map(line => `> ${line.trim()}`).join('\n');
+        return `\n${formatted}\n`;
+      },
+    });
+
+    // Handle TL;DR container - renders as a callout box
+    turndownService.addRule('tldrContainer', {
+      filter: (node) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        if (node.nodeName !== 'DIV') return false;
+        const className = (node as unknown as TurndownNode).getAttribute('class') || '';
+        return className.includes('tldr-container');
+      },
+      replacement: (content) => {
+        return `\n\n${content.trim()}\n\n`;
+      },
+    });
+
     // Handle metric cards and similar styled divs from Loop/Teams
     // Convert them to blockquotes or info boxes
     turndownService.addRule('metricCards', {
@@ -125,8 +154,7 @@ function getTurndownService(): TurndownService {
         if (node.nodeName !== 'DIV') return false;
         const className = (node as unknown as TurndownNode).getAttribute('class') || '';
         return className.includes('metric-card') || 
-               className.includes('insight-card') ||
-               className.includes('card');
+               className.includes('insight-card');
       },
       replacement: (content) => {
         // Format as a blockquote to preserve the card-like appearance
@@ -353,6 +381,34 @@ export function htmlToMarkdown(html: string): string {
   let normalizedHtml = html
     .replace(/\r\n/g, '\n')  // Windows CRLF → LF
     .replace(/\r/g, '\n');   // Old Mac CR → LF
+
+  // Extract content from iframe srcdoc attributes (Loop/Teams embeds content this way)
+  // The srcdoc contains HTML-escaped content that we need to decode and inline
+  const iframeSrcdocRegex = /<iframe[^>]*\ssrcdoc="([^"]+)"[^>]*>[\s\S]*?<\/iframe>/gi;
+  let srcdocMatch;
+  while ((srcdocMatch = iframeSrcdocRegex.exec(normalizedHtml)) !== null) {
+    const escapedContent = srcdocMatch[1];
+    // Decode the HTML-escaped srcdoc content
+    let decodedContent = escapedContent
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&amp;/g, '&')
+      .replace(/&#39;/g, "'");
+    
+    // Extract just the body content, stripping doctype/html/head/style
+    const bodyMatch = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(decodedContent);
+    if (bodyMatch) {
+      decodedContent = bodyMatch[1];
+    }
+    // Remove style tags from extracted content
+    decodedContent = decodedContent.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+    
+    // Replace the iframe with its decoded content
+    normalizedHtml = normalizedHtml.replace(srcdocMatch[0], decodedContent);
+  }
+  // Reset regex lastIndex since we modified the string
+  iframeSrcdocRegex.lastIndex = 0;
 
   // Decode HTML entities that are double-encoded HTML tags from Loop/Teams
   // Only decode if we detect escaped HTML tag patterns (e.g., &lt;div class=&quot;)
