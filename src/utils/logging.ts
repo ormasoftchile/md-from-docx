@@ -1,16 +1,52 @@
 /**
  * Logging utility with VS Code Output Channel
+ * Falls back to console logging when running outside VS Code (e.g., in tests/CI)
  */
-import * as vscode from 'vscode';
 
-let outputChannel: vscode.OutputChannel | undefined;
+// Dynamically import vscode only when available
+let vscode: typeof import('vscode') | undefined;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  vscode = require('vscode');
+} catch {
+  // Running outside VS Code (tests, CI, etc.)
+  vscode = undefined;
+}
+
+interface OutputChannel {
+  appendLine(message: string): void;
+  show(): void;
+  dispose(): void;
+}
+
+let outputChannel: OutputChannel | undefined;
+
+/**
+ * Console-based fallback output channel for non-VS Code environments
+ */
+const consoleChannel: OutputChannel = {
+  appendLine(message: string): void {
+    console.log(message);
+  },
+  show(): void {
+    // No-op for console
+  },
+  dispose(): void {
+    // No-op for console
+  },
+};
 
 /**
  * Gets or creates the extension's output channel for logging.
+ * Returns a console-based channel when running outside VS Code.
  */
-export function getOutputChannel(): vscode.OutputChannel {
+export function getOutputChannel(): OutputChannel {
   if (!outputChannel) {
-    outputChannel = vscode.window.createOutputChannel('DOCX Markdown Converter');
+    if (vscode?.window) {
+      outputChannel = vscode.window.createOutputChannel('DOCX Markdown Converter');
+    } else {
+      outputChannel = consoleChannel;
+    }
   }
   return outputChannel;
 }
