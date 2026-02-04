@@ -1,0 +1,35 @@
+{
+  "runId": "run-1770167445422",
+  "timestamp": "2026-02-04T01:10:45.422Z",
+  "before": {
+    "timestamp": "2026-02-04T01:10:14.869Z",
+    "totalFiles": 5,
+    "successfulConversions": 5,
+    "failedConversions": 0,
+    "averageMarkdownLength": 46656,
+    "totalHeadings": 174,
+    "totalTables": 438,
+    "totalImages": 141,
+    "issues": [
+      "Correo institucional_como ingresar.docx: Contains HTML markup",
+      "Documentación.docx: Contains HTML markup"
+    ]
+  },
+  "after": {
+    "timestamp": "2026-02-04T01:10:43.436Z",
+    "totalFiles": 5,
+    "successfulConversions": 5,
+    "failedConversions": 0,
+    "averageMarkdownLength": 46656,
+    "totalHeadings": 174,
+    "totalTables": 438,
+    "totalImages": 141,
+    "issues": [
+      "Correo institucional_como ingresar.docx: Contains HTML markup",
+      "Documentación.docx: Contains HTML markup"
+    ]
+  },
+  "regressions": [],
+  "improvements": [],
+  "summary": "🟡 NO SIGNIFICANT CHANGES"
+}

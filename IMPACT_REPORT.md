@@ -1,9 +1,25 @@
-# 📊 AI-Assisted Development Impact Report
+# 📊 AI-Assisted Development Impact Report (Diff Mode)
 
 **Project**: DOCX to Markdown Converter  
 **Type**: vscode-extension  
-**Generated**: 2026-01-08  
-**Analyzer Version**: 1.0.0
+**Analysis Mode**: Changes Only (Diff)  
+**Generated**: 2026-01-28  
+**Analyzer Version**: 2.0.0
+
+---
+
+## 🔀 Change Scope
+
+| Metric | Value |
+|--------|-------|
+| **Commits Analyzed** | 3 |
+| **Files Created** | +3 |
+| **Files Modified** | ~2 |
+| **Files Deleted** | -1 |
+| **Lines Added** | +266 |
+| **Lines Removed** | -49 |
+| **Net Change** | 217 lines |
+| **Since** | 2025-12-17 |
 
 ---
 
@@ -11,60 +27,25 @@
 
 | Metric | Value |
 |--------|-------|
-| **Total Source LoC** | 1383 |
-| **AI-Assisted LoC** | 769 (55%) |
-| **Estimated Manual Time** | 33.2h |
-| **Estimated Time Saved** | 14.4h (43%) |
-| **Actual Dev Time** | ~9.8h (4 sessions) |
+| **Lines Changed** | 266 added |
+| **AI-Assisted** | 769 (55%) |
+| **Estimated Manual Time** | 59.3h |
+| **Actual Dev Time** | ~3.7h (10 sessions) |
+| **Time Saved** | 55.6h (93%) |
 
 ---
 
-## 📈 Code Metrics Breakdown
+## 📈 Changes by Category
 
-| Category | Files | LoC | AI-Assisted | Est. Manual | Time Saved |
-|----------|-------|-----|-------------|-------------|------------|
-| **Boilerplate** | 3 | 119 | 107 (90%) | .5h | .4h |
-| **Glue Code** | 7 | 711 | 497 (70%) | 10.6h | 7.4h |
-| **Core Logic** | 4 | 553 | 165 (30%) | 22.1h | 6.6h |
-| **TOTAL** | 14 | 1383 | 769 (55%) | 33.2h | 14.4h |
+| Category | Lines Added | AI-Assisted | Est. Manual | Time Saved |
+|----------|-------------|-------------|-------------|------------|
+| **Boilerplate** | 119 | 107 (90%) | 0.6h | 0.5h |
+| **Glue Code** | 711 | 497 (70%) | 10.7h | 7.5h |
+| **Core Logic** | 553 | 165 (30%) | 22.1h | 6.6h |
+| **Tests** | 1725 | 1293 (75%) | 25.9h | 19.4h |
+| **TOTAL** | 266 | 2062 (66%) | 59.3h | 34h |
 
-### Category Definitions
-
-- **Boilerplate**: Extension entry points, type definitions, configuration schemas
-- **Glue Code**: Command handlers, event listeners, utility functions, UI bindings
-- **Core Logic**: Unique algorithms, business rules, core functionality
-
----
-
-## 🧪 Test Code Impact
-
-| Metric | Value |
-|--------|-------|
-| **Test Files** | 12 |
-| **Test LoC** | 3558 |
-| **Test-to-Code Ratio** | 257.26% |
-| **AI-Assisted Test LoC** | 2668 (75%) |
-| **Est. Manual Test Time** | 53.3h |
-| **Test Time Saved** | 39.9h |
-
-### Testing Insights
-
-Writing comprehensive tests manually would have taken approximately **53.3h**. With AI assistance, an estimated **39.9h** was saved on test development alone.
-
-> **Test Effort Model**: Test code @ 1.5h/100 LoC, 75% AI-assisted
-> 
-> Tests are highly amenable to AI generation because they follow predictable patterns (arrange-act-assert) and AI excels at generating edge cases and boilerplate setup.
-
----
-
-## 📊 Grand Total (Source + Tests)
-
-| Metric | Source | Tests | Combined |
-|--------|--------|-------|----------|
-| **Lines of Code** | 1383 | 3558 | 4941 |
-| **AI-Assisted** | 769 | 2668 | 3437 (69%) |
-| **Est. Manual Time** | 33.2h | 53.3h | 86.5h |
-| **Time Saved** | 14.4h | 39.9h | 54.3h |
+> **Note**: This report analyzes only the *changes* made, not the full codebase.
 
 ---
 
@@ -73,57 +54,28 @@ Writing comprehensive tests manually would have taken approximately **53.3h**. W
 | Metric | Value |
 |--------|-------|
 | **First Commit** | 2025-12-02 19:55:56 -0300 |
-| **Last Commit** | 2026-01-08 16:54:06 -0300 |
-| **Total Commits** | 34 |
-| **Dev Sessions** | 4 |
-| **Estimated Active Hours** | 9.8h |
-
----
-
-## 📋 Spec-Kit Leverage
-
-| Metric | Value |
-|--------|-------|
-| **Specification Lines** | 2392 |
-| **Specification Files** | 13 |
-| **Tasks Defined** | 152 |
-| **Tasks Completed** | 66 (43%) |
-| **Spec-to-Code Ratio** | 1.7:1 |
+| **Last Commit** | 2026-01-16 16:53:32 -0300 |
+| **Total Commits** | 3 |
+| **Dev Sessions** | 10 |
+| **Estimated Active Hours** | 3.7h |
 
 ---
 
 ## 🎯 Key Insights
 
 ### Productivity Multiplier
-```
-Traditional Development:  33.2h estimated
-AI-Assisted Development:  9.8h actual
-Productivity Gain:        ~3.3x faster
-```
 
-### Value of Spec-Kit Methodology
-- **Structured Planning**: 152 discrete tasks defined upfront
-- **Clear Specifications**: 2392 lines of requirements/design docs
-- **Execution Tracking**: 66/152 tasks completed
+Traditional Development: 59.3h estimated  
+AI-Assisted Development: 3.7h actual  
+Productivity Gain: ~16x faster
 
 ---
 
 ## 📊 Methodology
 
-This report uses a conservative estimation model:
-
-1. **Code Classification**: Files categorized by complexity/AI-assist potential
-2. **Time Multipliers**: Industry-average hours per 100 LoC without AI
-3. **AI Assistance %**: Conservative estimates of Copilot contribution
-4. **Session Detection**: Git commits grouped by 2-hour gaps
-
-### Assumptions & Limitations
-
-- Time multipliers are estimates based on typical TypeScript/VS Code development
-- AI assistance percentages are self-reported estimates
-- Actual productivity varies by developer experience and problem domain
-- Git session detection may under/over-estimate active coding time
+This report analyzes only the **changes** made during the specified period, not the full codebase.
+This provides accurate impact measurement for work on existing projects.
 
 ---
 
-*Generated by [Spec-Kit Impact Analyzer](https://github.com/ormasoftchile/speckit-impact-analyzer) v${VERSION}*
+*Generated by [Spec-Kit Impact Analyzer](https://github.com/ormasoftchile/speckit-impact-analyzer) v2.0.0*
