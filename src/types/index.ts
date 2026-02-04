@@ -28,7 +28,7 @@ export interface ImageAsset {
   originalFormat: string;
 
   /** Target format for output file (e.g., 'png', 'jpeg') */
-  outputFormat: 'png' | 'jpeg' | 'gif';
+  outputFormat: 'png' | 'jpeg' | 'gif' | 'svg';
 
   /** Generated filename (e.g., 'image-001.png') */
   filename: string;

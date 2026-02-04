@@ -117,6 +117,37 @@ function getTurndownService(): TurndownService {
       },
     });
 
+    // Handle metric cards and similar styled divs from Loop/Teams
+    // Convert them to blockquotes or info boxes
+    turndownService.addRule('metricCards', {
+      filter: (node) => {
+        if (node.nodeName !== 'DIV') return false;
+        const className = (node as unknown as TurndownNode).getAttribute('class') || '';
+        return className.includes('metric-card') || 
+               className.includes('insight-card') ||
+               className.includes('card');
+      },
+      replacement: (content) => {
+        // Format as a blockquote to preserve the card-like appearance
+        const lines = content.trim().split('\n').filter(line => line.trim());
+        const formatted = lines.map(line => `> ${line.trim()}`).join('\n');
+        return `\n\n${formatted}\n\n`;
+      },
+    });
+
+    // Handle metric containers - just pass through their children
+    turndownService.addRule('metricContainers', {
+      filter: (node) => {
+        if (node.nodeName !== 'DIV') return false;
+        const className = (node as unknown as TurndownNode).getAttribute('class') || '';
+        return className.includes('metrics-container') || 
+               className.includes('insights-container');
+      },
+      replacement: (content) => {
+        return `\n\n${content.trim()}\n\n`;
+      },
+    });
+
     debug('TurndownService initialized with GFM plugin');
   }
 
@@ -320,6 +351,38 @@ export function htmlToMarkdown(html: string): string {
   let normalizedHtml = html
     .replace(/\r\n/g, '\n')  // Windows CRLF → LF
     .replace(/\r/g, '\n');   // Old Mac CR → LF
+
+  // Decode HTML entities that are double-encoded HTML tags from Loop/Teams
+  // Only decode if we detect escaped HTML tag patterns (e.g., &lt;div class=&quot;)
+  // This preserves literal text like &lt;tag&gt; in normal content
+  if (/&lt;(div|span|style|table|ul|ol|details)\s+(class|id|style)=&quot;/i.test(normalizedHtml)) {
+    debug('Detected escaped HTML tags from Loop/Teams, decoding entities');
+    normalizedHtml = normalizedHtml
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&amp;(?!lt;|gt;|quot;|amp;|nbsp;)/g, '&');  // Don't decode entity references
+    
+    // Convert Loop metric cards to markdown BEFORE Turndown
+    // Pattern: <div class="metric-card">...<h4>Title</h4>...<div class="metric-card-value">VALUE</div>...<p>Description</p>...</div>
+    normalizedHtml = normalizedHtml.replace(
+      /<div[^>]*class="[^"]*metric-card[^"]*"[^>]*>[\s\S]*?<h4>([^<]+)<\/h4>[\s\S]*?<div[^>]*class="[^"]*metric-card-value[^"]*"[^>]*>([^<]+)<\/div>[\s\S]*?<p>([^<]+)<\/p>[\s\S]*?<\/div>/gi,
+      (_, title, value, description) => {
+        return `<blockquote><strong>${title.trim()}</strong><br/><span style="font-size:2em">${value.trim()}</span><br/><em>${description.trim()}</em></blockquote>`;
+      }
+    );
+    
+    // Remove the metrics-container wrapper
+    normalizedHtml = normalizedHtml.replace(/<div[^>]*class="[^"]*metrics-container[^"]*"[^>]*>/gi, '');
+    normalizedHtml = normalizedHtml.replace(/<\/div>\s*<\/body>\s*<\/html>"\s*>/gi, '');
+    
+    // Remove any remaining style tags that got decoded
+    normalizedHtml = normalizedHtml.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+    
+    // Remove body/html wrappers that might have appeared
+    normalizedHtml = normalizedHtml.replace(/<\/?body[^>]*>/gi, '');
+    normalizedHtml = normalizedHtml.replace(/<\/?html[^>]*>/gi, '');
+  }
 
   // Pre-process to remove Word artifacts
   normalizedHtml = preprocessHtml(normalizedHtml);

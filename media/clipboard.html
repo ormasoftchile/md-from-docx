@@ -259,12 +259,38 @@
         return;
       }
 
+      // Debug: Search for the metric card content
+      console.log('=== SEARCHING FOR METRIC CARDS ===');
+      console.log('Contains "Repos Onboarded":', capturedHtml.includes('Repos Onboarded'));
+      console.log('Contains "SpecKit POCs":', capturedHtml.includes('SpecKit POCs'));
+      console.log('Contains "Key Metrics":', capturedHtml.includes('Key Metrics'));
+      
+      // Find the context around "Repos Onboarded" if it exists
+      const reposIdx = capturedHtml.indexOf('Repos Onboarded');
+      if (reposIdx > -1) {
+        console.log('=== CONTEXT AROUND "Repos Onboarded" (500 chars before/after) ===');
+        console.log(capturedHtml.substring(Math.max(0, reposIdx - 500), reposIdx + 500));
+      }
+
+      // Debug: Log full HTML length and search for image-like patterns
+      console.log('=== HTML LENGTH:', capturedHtml.length, '===');
+      
+      // Look for various image patterns
+      const patterns = {
+        'img tags': (capturedHtml.match(/<img/gi) || []).length,
+        'svg tags': (capturedHtml.match(/<svg/gi) || []).length,
+        'canvas tags': (capturedHtml.match(/<canvas/gi) || []).length,
+        'background-image': (capturedHtml.match(/background-image/gi) || []).length,
+        'blob: URLs': (capturedHtml.match(/blob:/gi) || []).length,
+        'data:image': (capturedHtml.match(/data:image/gi) || []).length,
+      };
+      console.log('=== IMAGE PATTERNS FOUND ===', patterns);
+
+      const embeddedImages = [];
+
       // Extract embedded images from HTML (data URIs in img src)
-      // Handle both double and single quotes
       const imgRegex = /<img[^>]+src=["'](data:image\/[^"']+)["'][^>]*>/gi;
       let match;
-      const embeddedImages = [];
-      
       while ((match = imgRegex.exec(capturedHtml)) !== null) {
         embeddedImages.push({
           dataUri: match[1],
@@ -272,11 +298,48 @@
         });
       }
 
-      // Also extract VML images (Word charts/shapes) - v:imagedata with src attribute
+      // Extract SVGs and convert to data URIs
+      // Match complete SVG elements including nested content
+      const svgRegex = /<svg[^>]*>[\s\S]*?<\/svg>/gi;
+      const svgMatches = capturedHtml.match(svgRegex) || [];
+      console.log('=== SVG ELEMENTS FOUND:', svgMatches.length, '===');
+      
+      svgMatches.forEach((svgContent, idx) => {
+        // Skip tiny SVGs (likely icons, not content images)
+        // Check for meaningful size - look for width/height attributes or viewBox
+        const svgLength = svgContent.length;
+        
+        console.log(`SVG ${idx}: length=${svgLength}`);
+        
+        // Only convert LARGE SVGs (>3000 chars) that are likely real images/diagrams
+        // Small SVGs (<3000 chars) are typically emojis/icons - skip them entirely
+        if (svgLength > 3000) {
+          // Ensure SVG has xmlns for standalone use
+          let svgForConversion = svgContent;
+          if (!svgForConversion.includes('xmlns=')) {
+            svgForConversion = svgForConversion.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+          }
+          
+          // Convert SVG to data URI
+          const encoded = btoa(unescape(encodeURIComponent(svgForConversion)));
+          const dataUri = `data:image/svg+xml;base64,${encoded}`;
+          
+          embeddedImages.push({
+            dataUri: dataUri,
+            index: embeddedImages.length,
+            type: 'svg'
+          });
+          
+          console.log(`SVG ${idx} converted to data URI (real image)`);
+        } else {
+          console.log(`SVG ${idx} skipped (small icon/emoji)`);
+        }
+      });
+
+      // Also extract VML images (Word charts/shapes)
       const vmlRegex = /<v:imagedata[^>]+src=["']([^"']+)["'][^>]*>/gi;
       while ((match = vmlRegex.exec(capturedHtml)) !== null) {
         const src = match[1];
-        // Only add if it's a data URI (not a file reference)
         if (src.startsWith('data:image/')) {
           embeddedImages.push({
             dataUri: src,
@@ -285,7 +348,7 @@
         }
       }
 
-      // Extract images from background-image styles (sometimes Word uses these)
+      // Extract images from background-image styles
       const bgRegex = /background-image:\s*url\(["']?(data:image\/[^"')]+)["']?\)/gi;
       while ((match = bgRegex.exec(capturedHtml)) !== null) {
         embeddedImages.push({
@@ -294,14 +357,35 @@
         });
       }
 
+      console.log('Total embedded images (including SVGs):', embeddedImages.length);
+
       // Combine with directly pasted images
       const allImages = [...capturedImages, ...embeddedImages];
+
+      // Replace SVGs in HTML with img placeholders pointing to the extracted images
+      // Remove small SVGs (icons) entirely
+      let processedHtml = capturedHtml;
+      let svgIndex = 0;
+      processedHtml = processedHtml.replace(svgRegex, (svgContent) => {
+        const svgLength = svgContent.length;
+        
+        if (svgLength > 3000) {
+          // Large SVG - replace with img tag pointing to extracted image
+          const imgData = embeddedImages.find(img => img.type === 'svg' && img.index === svgIndex);
+          svgIndex++;
+          if (imgData) {
+            return `<img src="${imgData.dataUri}" alt="diagram" />`;
+          }
+        }
+        // Small SVGs (icons/emojis) - remove entirely
+        return '';
+      });
 
       // Send to extension
       vscode.postMessage({
         type: 'paste',
         payload: {
-          html: capturedHtml,
+          html: processedHtml,
           images: allImages.map(img => img.dataUri),
           hasRichContent: true
         }
