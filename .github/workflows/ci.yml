@@ -138,30 +138,42 @@ jobs:
       run: |
         npm run version:patch
         NEW_VERSION=$(node -p "require('./package.json').version")
-        git add package.json
-        git commit -m "chore: bump version to ${NEW_VERSION} [skip ci]"
-        git tag "v${NEW_VERSION}"
-        git push origin main --tags
+        if git rev-parse "v${NEW_VERSION}" >/dev/null 2>&1; then
+          echo "Tag v${NEW_VERSION} already exists, skipping version bump"
+        else
+          git add package.json
+          git commit -m "chore: bump version to ${NEW_VERSION} [skip ci]"
+          git tag "v${NEW_VERSION}"
+          git push origin main --tags
+        fi
 
     - name: Auto version bump (minor)  
       if: "contains(github.event.head_commit.message, '[version:minor]')"
       run: |
         npm run version:minor
         NEW_VERSION=$(node -p "require('./package.json').version")
-        git add package.json
-        git commit -m "chore: bump version to ${NEW_VERSION} [skip ci]"
-        git tag "v${NEW_VERSION}"
-        git push origin main --tags
+        if git rev-parse "v${NEW_VERSION}" >/dev/null 2>&1; then
+          echo "Tag v${NEW_VERSION} already exists, skipping version bump"
+        else
+          git add package.json
+          git commit -m "chore: bump version to ${NEW_VERSION} [skip ci]"
+          git tag "v${NEW_VERSION}"
+          git push origin main --tags
+        fi
 
     - name: Auto version bump (major)
       if: "contains(github.event.head_commit.message, '[version:major]')"
       run: |
         npm run version:major
         NEW_VERSION=$(node -p "require('./package.json').version")
-        git add package.json
-        git commit -m "chore: bump version to ${NEW_VERSION} [skip ci]"
-        git tag "v${NEW_VERSION}"
-        git push origin main --tags
+        if git rev-parse "v${NEW_VERSION}" >/dev/null 2>&1; then
+          echo "Tag v${NEW_VERSION} already exists, skipping version bump"
+        else
+          git add package.json
+          git commit -m "chore: bump version to ${NEW_VERSION} [skip ci]"
+          git tag "v${NEW_VERSION}"
+          git push origin main --tags
+        fi
 
     - name: Semantic Release
       env:
