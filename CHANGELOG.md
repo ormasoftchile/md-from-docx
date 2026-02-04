@@ -1,3 +1,16 @@
+# [1.2.0](https://github.com/ormasoftchile/md-from-docx/compare/v1.1.9...v1.2.0) (2026-02-04)
+
+
+### Bug Fixes
+
+* **lint:** add type annotations to fix ESLint errors ([1bf8978](https://github.com/ormasoftchile/md-from-docx/commit/1bf8978baec93071cb22b961fa4415ed091285c6))
+* preserve Word embedded images and VML content during conversion ([baf6966](https://github.com/ormasoftchile/md-from-docx/commit/baf6966e79a99f1f87e63eaa9df70a69e68a7498))
+
+
+### Features
+
+* support Loop/Teams metric cards and improve SVG handling ([#2](https://github.com/ormasoftchile/md-from-docx/issues/2)) ([cdffbde](https://github.com/ormasoftchile/md-from-docx/commit/cdffbde22f9eda088f88eba861f397c7cfb7d7a7))
+
 ## [1.1.9](https://github.com/ormasoftchile/md-from-docx/compare/v1.1.8...v1.1.9) (2026-02-04)
 
 
