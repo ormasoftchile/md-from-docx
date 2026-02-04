@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/ormasoftchile/md-from-docx/compare/v1.2.0...v1.3.0) (2026-02-04)
+
+
+### Features
+
+* **loop:** extract content from iframe srcdoc for TL;DR cards ([c3acd80](https://github.com/ormasoftchile/md-from-docx/commit/c3acd80b0ac1e13101cce3e17914873ba6758c4b))
+
 # [1.2.0](https://github.com/ormasoftchile/md-from-docx/compare/v1.1.9...v1.2.0) (2026-02-04)
 
 
