@@ -260,11 +260,34 @@
       }
 
       // Extract embedded images from HTML (data URIs in img src)
-      const imgRegex = /<img[^>]+src="(data:image\/[^"]+)"[^>]*>/g;
+      // Handle both double and single quotes
+      const imgRegex = /<img[^>]+src=["'](data:image\/[^"']+)["'][^>]*>/gi;
       let match;
       const embeddedImages = [];
       
       while ((match = imgRegex.exec(capturedHtml)) !== null) {
+        embeddedImages.push({
+          dataUri: match[1],
+          index: embeddedImages.length
+        });
+      }
+
+      // Also extract VML images (Word charts/shapes) - v:imagedata with src attribute
+      const vmlRegex = /<v:imagedata[^>]+src=["']([^"']+)["'][^>]*>/gi;
+      while ((match = vmlRegex.exec(capturedHtml)) !== null) {
+        const src = match[1];
+        // Only add if it's a data URI (not a file reference)
+        if (src.startsWith('data:image/')) {
+          embeddedImages.push({
+            dataUri: src,
+            index: embeddedImages.length
+          });
+        }
+      }
+
+      // Extract images from background-image styles (sometimes Word uses these)
+      const bgRegex = /background-image:\s*url\(["']?(data:image\/[^"')]+)["']?\)/gi;
+      while ((match = bgRegex.exec(capturedHtml)) !== null) {
         embeddedImages.push({
           dataUri: match[1],
           index: embeddedImages.length
