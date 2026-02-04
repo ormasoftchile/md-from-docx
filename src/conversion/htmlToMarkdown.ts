@@ -121,6 +121,7 @@ function getTurndownService(): TurndownService {
     // Convert them to blockquotes or info boxes
     turndownService.addRule('metricCards', {
       filter: (node) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (node.nodeName !== 'DIV') return false;
         const className = (node as unknown as TurndownNode).getAttribute('class') || '';
         return className.includes('metric-card') || 
@@ -138,6 +139,7 @@ function getTurndownService(): TurndownService {
     // Handle metric containers - just pass through their children
     turndownService.addRule('metricContainers', {
       filter: (node) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (node.nodeName !== 'DIV') return false;
         const className = (node as unknown as TurndownNode).getAttribute('class') || '';
         return className.includes('metrics-container') || 
@@ -367,7 +369,7 @@ export function htmlToMarkdown(html: string): string {
     // Pattern: <div class="metric-card">...<h4>Title</h4>...<div class="metric-card-value">VALUE</div>...<p>Description</p>...</div>
     normalizedHtml = normalizedHtml.replace(
       /<div[^>]*class="[^"]*metric-card[^"]*"[^>]*>[\s\S]*?<h4>([^<]+)<\/h4>[\s\S]*?<div[^>]*class="[^"]*metric-card-value[^"]*"[^>]*>([^<]+)<\/div>[\s\S]*?<p>([^<]+)<\/p>[\s\S]*?<\/div>/gi,
-      (_, title, value, description) => {
+      (_match: string, title: string, value: string, description: string) => {
         return `<blockquote><strong>${title.trim()}</strong><br/><span style="font-size:2em">${value.trim()}</span><br/><em>${description.trim()}</em></blockquote>`;
       }
     );
