@@ -465,6 +465,66 @@ function convertHtmlTableToMarkdown(tableHtml: string): string {
 }
 
 /**
+ * Repairs broken GFM table rows produced by Turndown's GFM plugin.
+ * When table cells contain <br> tags, Turndown converts them to \n,
+ * which breaks the pipe-delimited row format. This function detects
+ * GFM tables and merges continuation lines back into their parent row.
+ *
+ * A continuation line is any line between two pipe-starting rows that
+ * doesn't itself start with | and isn't the separator row.
+ */
+function repairMultiLineTableRows(markdown: string): string {
+  const lines = markdown.split('\n');
+  const result: string[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // Detect start of a GFM table: line starts with | and next line is separator
+    if (line.startsWith('|') && i + 1 < lines.length && /^\|\s*[-:]+/.test(lines[i + 1])) {
+      // We're inside a GFM table — collect header + separator
+      result.push(line);
+      i++;
+      result.push(lines[i]); // separator row
+      i++;
+
+      // Now process data rows: merge continuation lines into pipe rows
+      while (i < lines.length) {
+        const current = lines[i];
+
+        if (current.startsWith('|')) {
+          // This is a proper pipe row start — but it might have continuations after it
+          let mergedRow = current;
+          i++;
+          // Absorb continuation lines (non-pipe, non-empty) into this row
+          while (i < lines.length && !lines[i].startsWith('|') && lines[i].trim() !== '') {
+            mergedRow += ' ' + lines[i].trim();
+            i++;
+          }
+          result.push(mergedRow);
+        } else if (current.trim() === '') {
+          // Empty line = end of table
+          result.push(current);
+          i++;
+          break;
+        } else {
+          // Orphan continuation line before first pipe row in body — skip
+          // This shouldn't normally happen but be safe
+          result.push(current);
+          i++;
+        }
+      }
+    } else {
+      result.push(line);
+      i++;
+    }
+  }
+
+  return result.join('\n');
+}
+
+/**
  * Detects and fixes heading levels based on Word-style numbering patterns.
  * Converts numbered outline structure (1, 1.1, 1.1.1) to proper heading levels.
  * @param markdown Markdown content with headings
@@ -600,6 +660,12 @@ function preprocessHtml(
   // --- Remove XML namespace declarations and processing instructions ---
   cleaned = cleaned.replace(/<\?xml[^>]*\?>/gi, '');
   cleaned = cleaned.replace(/xmlns[^=]*="[^"]*"/gi, '');
+
+  // --- Strip Loop/Teams table attributes that contain pre-rendered markdown ---
+  // The markdown= attribute can contain full GFM table content with [N](url) links
+  // that would leak into output. The node= attribute is also unnecessary.
+  cleaned = cleaned.replace(/\s+markdown="[^"]*"/gi, () => { attributesStripped++; return ''; });
+  cleaned = cleaned.replace(/\s+node="[^"]*"/gi, () => { attributesStripped++; return ''; });
 
   // --- Remove Word-specific XML namespaced tags (FR-004) ---
   for (const prefix of cfg.stripNamespacePrefixes) {
@@ -819,6 +885,12 @@ export function htmlToMarkdown(html: string): string {
   // This catches tables that Turndown didn't convert
   // Use a function to find outermost tables (handles nested tables correctly)
   markdown = replaceOutermostTables(markdown);
+
+  // Fix broken GFM table rows: Turndown's GFM plugin produces multi-line rows
+  // when cells contain <br> tags (converted to \n), which breaks pipe-delimited tables.
+  // Detect sequences: | header |\n| --- |\n followed by lines that don't start with |
+  // and merge them back into proper single-line rows.
+  markdown = repairMultiLineTableRows(markdown);
 
   // Post-process: fix image syntax - encode paths and clean alt text
   // Matches ![alt](path) or ![alt](path "title") including multi-line alt text
