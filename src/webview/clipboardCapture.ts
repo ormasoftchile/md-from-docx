@@ -134,14 +134,15 @@ export class ClipboardCapturePanel {
   /**
    * Handles messages from the webview.
    */
-  private handleMessage(message: { type: string; payload?: ClipboardPayload }): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private handleMessage(message: { type: string; payload?: any }): void {
     debug('Received message from webview', { type: message.type });
 
     switch (message.type) {
       case 'paste':
         if (message.payload && this.onPasteCallback) {
           info('Paste data received from webview');
-          this.onPasteCallback(message.payload);
+          this.onPasteCallback(message.payload as ClipboardPayload);
         }
         break;
 
