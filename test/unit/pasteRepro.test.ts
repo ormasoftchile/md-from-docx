@@ -241,4 +241,57 @@ describe('Teams paste reproduction', () => {
     expect(result).not.toContain('Copy');
     expect(result).not.toContain('fui-Button');
   });
+
+  test('REAL Loop citation with &amp; in URLs and many CSS classes', () => {
+    // Exact structure from real Loop/Teams paste - note the &amp; in the URL within &quot; JSON
+    const html = `<html><body>
+<p>Some text before.<a role="button" aria-expanded="false" class="fai-Citation r1jm3di4 ___rgb2pp0 ftuwxu6 f122n59 f4d9j23 fi64zpg fmrv4ls" contenteditable="false" data-citation-group-id="citation-group-0" data-grouped-citations="[{&quot;index&quot;:&quot;1&quot;,&quot;url&quot;:&quot;https://microsoft.sharepoint.com/teams/SQLOneBox/_layouts/15/Doc.aspx?sourcedoc=%7B9CE80B23-98E5-4813-B1EA-E25D15CE0637%7D&amp;file=Onebox%20and%20Livesite%20Tools%20for%20developer%20inner%20loop.docx&amp;action=default&amp;mobileredirect=true&amp;DefaultItemOpen=1&quot;,&quot;name&quot;:&quot;Onebox and Livesite Tools for developer inner loop&quot;,&quot;type&quot;:&quot;Word&quot;}]" data-hovered="false" tabindex="-1" aria-label="Citation: Onebox and Livesite Tools for developer inner loop"><span class="___uomype0 f22iagw f122n59 f4d9j23 fd9q35j"><svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="currentColor" aria-hidden="true"><path d="M11.25 2c.97 0 1.75.78 1.75 1.75v8.5c0 .97-.78 1.75-1.75 1.75H5.5z"></path></svg></span><span class="___a76bdi0 f1hu3pq6">Onebox and Livesite Tools for developer inner loop</span></a></p>
+</body></html>`;
+    const result = htmlToMarkdown(html);
+    console.log('=== REAL CITATION RESULT ===\n', result, '\n=== END ===');
+    expect(result).toContain('[Onebox and Livesite Tools for developer inner loop]');
+    expect(result).toContain('https://microsoft.sharepoint.com');
+    // Should NOT have raw SVG or broken brackets
+    expect(result).not.toContain('svg');
+    expect(result).not.toContain('viewBox');
+  });
+
+  test('REAL Loop citation with square brackets in doc name: SQL SRE [Kr]', () => {
+    const html = `<html><body>
+<p>See the plan.<a role="button" class="fai-Citation r1jm3di4 ___rgb2pp0" contenteditable="false" data-citation-group-id="citation-group-1" data-grouped-citations="[{&quot;index&quot;:&quot;2&quot;,&quot;url&quot;:&quot;https://microsoft.sharepoint.com/teams/sqlsre/_layouts/15/Doc.aspx?sourcedoc=%7B3C2A1BB0-D8EF-4564-B6C3-240A0E5819FB%7D&amp;file=SQL%20SRE%20[Kr]%20Tooling%20Semester%20Plan.docx&amp;action=default&amp;mobileredirect=true&amp;DefaultItemOpen=1&quot;,&quot;name&quot;:&quot;SQL SRE [Kr] Tooling Semester Plan&quot;,&quot;type&quot;:&quot;Word&quot;}]" data-hovered="false" tabindex="-1" aria-label="Citation: SQL SRE [Kr] Tooling Semester Plan"><span class="___uomype0"><svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="currentColor" aria-hidden="true"><path d="M11.25 2z"></path></svg></span><span class="___a76bdi0">SQL SRE [Kr] Tooling Semester Plan</span></a></p>
+</body></html>`;
+    const result = htmlToMarkdown(html);
+    console.log('=== BRACKET-NAME CITATION RESULT ===\n', result, '\n=== END ===');
+    // Should produce a clean link, with brackets escaped in the link text
+    expect(result).toContain('SQL SRE');
+    expect(result).toContain('Tooling Semester Plan');
+    expect(result).toContain('https://microsoft.sharepoint.com');
+    // Should NOT have double brackets like ]]
+    expect(result).not.toMatch(/\]\]/);
+  });
+
+  test('REAL table with markdown attribute and inline fai-Citation', () => {
+    // The real table has a "markdown" attribute containing pre-rendered markdown with [N](url) citation refs
+    // PLUS the rendered <tbody> has fai-Citation elements inside <td> cells
+    // Both need to work: markdown attr stripped, citations in cells converted
+    const html = `<html><body>
+<table class="sometable" markdown="| Phase | Activities |
+|---|---|
+| Phase 1 | Deploy extension[1](https://sharepoint.com/doc1.docx). |" tabindex="-1">
+<thead><tr><th>Phase</th><th>Activities</th></tr></thead>
+<tbody><tr>
+<td>Phase 1: OneBox</td>
+<td>Deploy extension for testing.<a role="button" class="fai-Citation r1jm3di4 ___rgb2pp0" contenteditable="false" data-grouped-citations="[{&quot;index&quot;:&quot;1&quot;,&quot;url&quot;:&quot;https://microsoft.sharepoint.com/teams/SQLOneBox/_layouts/15/Doc.aspx?sourcedoc=%7B9CE80B23-98E5-4813-B1EA-E25D15CE0637%7D&amp;file=Onebox%20and%20Livesite%20Tools.docx&amp;action=default&quot;,&quot;name&quot;:&quot;Onebox and Livesite Tools&quot;,&quot;type&quot;:&quot;Word&quot;}]" data-hovered="false" tabindex="-1" aria-label="Citation: Onebox and Livesite Tools"><span class="___uomype0"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M11z"></path></svg></span><span class="___a76bdi0">Onebox and Livesite Tools</span></a>. Fix bugs.</td>
+</tr></tbody></table>
+</body></html>`;
+    const result = htmlToMarkdown(html);
+    console.log('=== TABLE+CITATION RESULT ===\n', result, '\n=== END ===');
+    // The citation inside the <td> should be a proper link
+    expect(result).toContain('Onebox and Livesite Tools');
+    expect(result).toContain('Phase 1');
+    // Should NOT contain the raw markdown attribute content (with [1](url))
+    expect(result).not.toContain('[1](https://sharepoint');
+    // Should NOT have SVG remnants
+    expect(result).not.toContain('svg');
+  });
 });
