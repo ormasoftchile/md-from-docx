@@ -144,4 +144,101 @@ describe('Teams paste reproduction', () => {
     expect(result.length).toBeGreaterThan(0);
     expect(result).toContain('Meeting Notes');
   });
+
+  test('Loop fai-Citation links become proper markdown links', () => {
+    // Real Loop citation: <a role="button" class="fai-Citation" data-grouped-citations="[{...}]">
+    // with spans inside for the icon + document name. No href attribute.
+    const html = `<html><body>
+<p>See the onboarding guide
+<a role="button" class="fai-Citation" data-grouped-citations="[{&quot;index&quot;:&quot;1&quot;,&quot;url&quot;:&quot;https://microsoft.sharepoint.com/teams/project/Shared%20Documents/Onboarding%20Guide.docx&quot;,&quot;name&quot;:&quot;Onboarding Guide&quot;,&quot;type&quot;:&quot;Word&quot;}]">
+<span class="___uomype0"><svg viewBox="0 0 20 20"><path d="M0 0h20v20H0z"/></svg></span>
+<span class="___a76bdi0">Onboarding Guide</span>
+</a> for details.</p>
+</body></html>`;
+    const result = htmlToMarkdown(html);
+    console.log('=== CITATION RESULT ===\n', result, '\n=== END ===');
+    // Should contain a proper markdown link with the document name and URL
+    expect(result).toContain('[Onboarding Guide');
+    expect(result).toContain('https://microsoft.sharepoint.com/teams/project/Shared%20Documents/Onboarding%20Guide.docx');
+    // Should NOT contain the raw SVG icon text
+    expect(result).not.toContain('svg');
+    expect(result).not.toContain('viewBox');
+  });
+
+  test('Loop fai-Citation with multiple grouped citations', () => {
+    // Some citations group multiple documents with a "+N" badge
+    const html = `<html><body>
+<p>Related documents:
+<a role="button" class="fai-Citation" data-grouped-citations="[{&quot;index&quot;:&quot;1&quot;,&quot;url&quot;:&quot;https://sharepoint.com/doc1.docx&quot;,&quot;name&quot;:&quot;Architecture Overview&quot;,&quot;type&quot;:&quot;Word&quot;},{&quot;index&quot;:&quot;2&quot;,&quot;url&quot;:&quot;https://sharepoint.com/doc2.pptx&quot;,&quot;name&quot;:&quot;Modernization Ideas&quot;,&quot;type&quot;:&quot;PowerPoint&quot;}]">
+<span class="___uomype0"><svg viewBox="0 0 20 20"><path d="M0 0h20v20H0z"/></svg></span>
+<span class="___a76bdi0">Architecture Overview</span>
+<span class="___1vi0vkd">+1</span>
+</a> for context.</p>
+</body></html>`;
+    const result = htmlToMarkdown(html);
+    console.log('=== MULTI-CITATION RESULT ===\n', result, '\n=== END ===');
+    // Should produce links for both documents
+    expect(result).toContain('[Architecture Overview');
+    expect(result).toContain('https://sharepoint.com/doc1.docx');
+    expect(result).toContain('[Modernization Ideas');
+    expect(result).toContain('https://sharepoint.com/doc2.pptx');
+    // Should NOT contain the +1 badge
+    expect(result).not.toContain('+1');
+  });
+
+  test('Loop code-preview blocks: toolbar chrome is stripped, content preserved', () => {
+    // Real Loop code-preview: scriptor-component-code-block div with toolbar buttons
+    // and an iframe srcdoc containing a TL;DR card
+    const html = `<html><body>
+<p>Here is the summary:</p>
+<div class="___1ta0mgc">
+  <div role="group" aria-label="Code Preview">
+    <div class="fui-FluentProvider">
+      <div class="scriptor-component-code-block">
+        <div class="___1f87bw6">
+          <button class="fui-Button" aria-label="Copy preview">Copy</button>
+          <button class="fui-MenuButton" aria-label="Display options">Display</button>
+          <button class="fui-MenuButton" aria-label="Export options">Export</button>
+        </div>
+        <iframe srcdoc="&lt;html&gt;&lt;body&gt;&lt;h2&gt;TL;DR Summary&lt;/h2&gt;&lt;p&gt;The project is on track with three key milestones completed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;"></iframe>
+      </div>
+    </div>
+  </div>
+</div>
+<p>End of summary.</p>
+</body></html>`;
+    const result = htmlToMarkdown(html);
+    console.log('=== CODE-PREVIEW RESULT ===\n', result, '\n=== END ===');
+    // The TL;DR content from the iframe should be preserved
+    expect(result).toContain('TL;DR Summary');
+    expect(result).toContain('three key milestones');
+    // Toolbar chrome should NOT appear
+    expect(result).not.toContain('Copy preview');
+    expect(result).not.toContain('Display options');
+    expect(result).not.toContain('Export options');
+    expect(result).not.toContain('fui-Button');
+    // The surrounding text should still be there
+    expect(result).toContain('Here is the summary');
+    expect(result).toContain('End of summary');
+  });
+
+  test('Loop code-preview with insight cards in iframe', () => {
+    // TL;DR card with insight-card in srcdoc
+    const html = `<div>
+<div class="scriptor-component-code-block">
+  <div class="___1f87bw6">
+    <button class="fui-Button">Copy</button>
+  </div>
+  <iframe srcdoc="&lt;html&gt;&lt;body&gt;&lt;div class=&quot;insights-container&quot;&gt;&lt;div class=&quot;insight-card&quot;&gt;&lt;span class=&quot;icon&quot;&gt;🚀&lt;/span&gt;&lt;h4&gt;Key Insight&lt;/h4&gt;&lt;p&gt;Adoption rate increased by 40%&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;&lt;/body&gt;&lt;/html&gt;"></iframe>
+</div>
+</div>`;
+    const result = htmlToMarkdown(html);
+    console.log('=== INSIGHT-CARD RESULT ===\n', result, '\n=== END ===');
+    // Insight card content should be converted (existing insight-card handling)
+    expect(result).toContain('Key Insight');
+    expect(result).toContain('40%');
+    // Toolbar should NOT appear
+    expect(result).not.toContain('Copy');
+    expect(result).not.toContain('fui-Button');
+  });
 });

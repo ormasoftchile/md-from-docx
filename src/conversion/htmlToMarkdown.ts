@@ -657,6 +657,46 @@ export function htmlToMarkdown(html: string): string {
     .replace(/\r\n/g, '\n')  // Windows CRLF → LF
     .replace(/\r/g, '\n');   // Old Mac CR → LF
 
+  // --- Loop/Teams citation links (fai-Citation) ---
+  // These are <a role="button" class="fai-Citation" data-grouped-citations="[{...}]">
+  // with NO href, so Turndown just dumps the inner text. We parse the JSON attribute
+  // and replace with proper <a href="URL">Name</a> elements.
+  normalizedHtml = normalizedHtml.replace(
+    /<a[^>]*class="[^"]*fai-Citation[^"]*"[^>]*data-grouped-citations="([^"]*)"[^>]*>[\s\S]*?<\/a>/gi,
+    (_match: string, escapedJson: string) => {
+      try {
+        const json = escapedJson
+          .replace(/&quot;/g, '"')
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>');
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const parsed: unknown = JSON.parse(json);
+        const citations = Array.isArray(parsed) ? parsed as Array<{ name?: string; url?: string; type?: string }> : [];
+        if (citations.length === 0) { return ''; }
+        return citations
+          .map(c => {
+            const name = c.name || 'Document';
+            const url = c.url || '';
+            return url ? `<a href="${url}">${name}</a>` : name;
+          })
+          .join(', ');
+      } catch {
+        // If JSON parse fails, drop the citation entirely to avoid chrome leak
+        debug('Failed to parse fai-Citation data-grouped-citations JSON');
+        return '';
+      }
+    }
+  );
+
+  // --- Loop/Teams code-preview blocks (scriptor-component-code-block) ---
+  // These wrap an iframe srcdoc with toolbar buttons (Copy, Display, Export).
+  // Strip the toolbar buttons and FluentUI chrome, keep only the iframe.
+  normalizedHtml = normalizedHtml.replace(
+    /<button[^>]*class="[^"]*fui-(?:Button|MenuButton)[^"]*"[^>]*>[\s\S]*?<\/button>/gi,
+    ''
+  );
+
   // Extract content from iframe srcdoc attributes (Loop/Teams embeds content this way)
   // The srcdoc contains HTML-escaped content that we need to decode and inline
   // Use a more robust regex that handles very long srcdoc content
