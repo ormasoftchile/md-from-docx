@@ -5,6 +5,7 @@ import TurndownService from 'turndown';
 // @ts-expect-error - turndown-plugin-gfm has incomplete type definitions
 import { gfm } from 'turndown-plugin-gfm';
 import { debug } from '../utils/logging';
+import type { PreprocessorConfig, PreprocessResult } from '../types';
 
 // Create and configure Turndown service
 let turndownService: TurndownService | undefined;
@@ -237,69 +238,222 @@ function getTurndownService(): TurndownService {
 }
 
 /**
+ * Detects orphaned data:image/* URIs in Markdown image references and replaces
+ * them with a placeholder (FR-011).
+ * 
+ * @param markdown - Markdown content to scan
+ * @returns OrphanDataUriResult with cleaned Markdown and orphan details
+ */
+export function detectOrphanDataUris(markdown: string): import('../types').OrphanDataUriResult {
+  const orphans: import('../types').OrphanDataUriResult['orphans'] = [];
+  const dataUriPattern = /!\[([^\]]*)\]\((data:image\/([^;]+);[^)]{100,})\)/g;
+
+  const cleaned = markdown.replace(dataUriPattern, (match, alt: string, dataUri: string, mimeSubType: string, offset: number) => {
+    orphans.push({
+      position: offset,
+      mimeType: `image/${mimeSubType}`,
+      approximateSize: Math.round(dataUri.length * 0.75), // base64 → byte estimate
+    });
+    debug(`Orphan data URI detected at position ${offset}: image/${mimeSubType}, ~${Math.round(dataUri.length * 0.75)} bytes`);
+    return `![${alt}](image-not-extracted)`;
+  });
+
+  return { markdown: cleaned, orphans };
+}
+
+/**
  * Converts a heading text to a Markdown anchor ID.
  * Follows GitHub-style anchor generation.
  * @param text Heading text
  * @returns Anchor ID (lowercase, spaces to hyphens, special chars removed)
  */
-function textToAnchor(text: string): string {
+export function textToAnchor(text: string): string {
   return text
     .toLowerCase()
     .trim()
-    .replace(/\s+/g, '-')           // spaces to hyphens
-    .replace(/[^\w\-áéíóúñü]/g, '') // remove special chars (keep accented letters)
-    .replace(/--+/g, '-')           // collapse multiple hyphens
-    .replace(/^-|-$/g, '');         // trim leading/trailing hyphens
+    .replace(/\s+/g, '-')              // spaces to hyphens
+    .replace(/[^\p{L}\p{N}-]/gu, '')  // remove non-letter/non-digit/non-hyphen (full Unicode support, FR-009)
+    .replace(/--+/g, '-')              // collapse multiple hyphens
+    .replace(/^-|-$/g, '');            // trim leading/trailing hyphens
+}
+
+/**
+ * Lightweight Turndown instance for converting cell HTML to Markdown (FR-007).
+ * No GFM plugin, no custom rules — just basic inline conversion.
+ */
+let cellTurndownService: TurndownService | undefined;
+
+function getCellTurndownService(): TurndownService {
+  if (!cellTurndownService) {
+    cellTurndownService = new TurndownService({
+      headingStyle: 'atx',
+      codeBlockStyle: 'fenced',
+    });
+  }
+  return cellTurndownService;
+}
+
+/**
+ * Finds outermost <table>...</table> blocks (handling nesting) and replaces each
+ * with its GFM-converted equivalent.
+ */
+function replaceOutermostTables(input: string): string {
+  let result = '';
+  let i = 0;
+  const lower = input.toLowerCase();
+
+  while (i < input.length) {
+    const openIdx = lower.indexOf('<table', i);
+    if (openIdx === -1) {
+      result += input.slice(i);
+      break;
+    }
+    // Append everything before the <table
+    result += input.slice(i, openIdx);
+
+    // Find the matching </table> accounting for nesting
+    let depth = 0;
+    let j = openIdx;
+    while (j < input.length) {
+      const nextOpen = lower.indexOf('<table', j + 1);
+      const nextClose = lower.indexOf('</table', j + (j === openIdx ? 1 : 0));
+
+      if (nextClose === -1) {
+        // No closing tag found — bail, append rest as-is
+        result += input.slice(openIdx);
+        return result;
+      }
+
+      if (nextOpen !== -1 && nextOpen < nextClose) {
+        depth++;
+        j = nextOpen;
+      } else {
+        if (depth === 0) {
+          // Found the matching close
+          const closeEnd = input.indexOf('>', nextClose + 7); // skip past </table>
+          const tableHtml = input.slice(openIdx, closeEnd + 1);
+          result += convertHtmlTableToMarkdown(tableHtml);
+          i = closeEnd + 1;
+          break;
+        } else {
+          depth--;
+          j = nextClose + 1;
+        }
+      }
+    }
+
+    // Safety: if we didn't break (j exceeded length), bail
+    if (j >= input.length) {
+      result += input.slice(openIdx);
+      break;
+    }
+  }
+
+  return result;
 }
 
 /**
  * Converts an HTML table to GFM markdown format.
+ * Uses a lightweight Turndown instance for cell content conversion (FR-007).
+ * Normalizes column counts across rows (FR-008).
  * @param tableHtml HTML table element
  * @returns GFM markdown table or original HTML if parsing fails
  */
 function convertHtmlTableToMarkdown(tableHtml: string): string {
   try {
+    // Pre-flatten nested tables: replace inner <table>...</table> blocks with their cell text
+    // This prevents the row regex from mismatching on nested </tr> tags.
+    let flatHtml = tableHtml;
+    // Iteratively flatten until no nested tables remain inside cells
+    let prevHtml = '';
+    while (prevHtml !== flatHtml) {
+      prevHtml = flatHtml;
+      flatHtml = flatHtml.replace(
+        /(<t[hd][^>]*>[\s\S]*?)<table[^>]*>([\s\S]*?)<\/table>([\s\S]*?<\/t[hd]>)/gi,
+        (_match, before: string, inner: string, after: string) => {
+          // Extract text from inner table cells
+          const cellTexts: string[] = [];
+          const innerCellRegex = /<t[hd][^>]*>([\s\S]*?)<\/t[hd]>/gi;
+          let cellMatch;
+          while ((cellMatch = innerCellRegex.exec(inner)) !== null) {
+            const text = cellMatch[1].replace(/<[^>]+>/g, '').trim();
+            if (text) { cellTexts.push(text); }
+          }
+          return before + cellTexts.join(' ') + after;
+        }
+      );
+    }
+
     // Extract rows
     const rowRegex = /<tr[^>]*>[\s\S]*?<\/tr>/gi;
-    const rows = tableHtml.match(rowRegex) || [];
+    const rows = flatHtml.match(rowRegex) || [];
     
     if (rows.length === 0) {
       return tableHtml; // No rows found, return original
     }
 
-    // Process each row
-    const markdownRows = rows.map((row) => {
+    const cellService = getCellTurndownService();
+
+    // Process each row into arrays of cell contents
+    const parsedRows: string[][] = rows.map((row) => {
       // Extract cells (both th and td)
       const cellRegex = /<t[hd][^>]*>[\s\S]*?<\/t[hd]>/gi;
       const cells = row.match(cellRegex) || [];
       
-      // Extract cell content and clean it
-      const cellContents = cells.map((cell) => {
-        // Remove the opening and closing tags
-        const content = cell
+      const cellContents: string[] = [];
+      for (const cell of cells) {
+        // Detect colspan attribute (FR-008)
+        const colspanMatch = cell.match(/colspan\s*=\s*["']?(\d+)["']?/i);
+        const colspan = colspanMatch ? parseInt(colspanMatch[1], 10) : 1;
+
+        // Extract inner HTML content
+        const innerHtml = cell
           .replace(/<t[hd][^>]*>/i, '')
           .replace(/<\/t[hd]>/i, '')
-          .trim()
-          // Remove remaining HTML tags
-          .replace(/<[^>]+>/g, '')
-          // Clean whitespace
-          .replace(/\s+/g, ' ')
           .trim();
-        
-        return content;
-      });
 
-      // Return pipe-separated cells
-      return `| ${cellContents.join(' | ')} |`;
+        // Use lightweight Turndown for cell content (FR-007): preserves bold, italic, links, code
+        let content: string;
+        if (/<[^>]+>/.test(innerHtml)) {
+          content = cellService.turndown(innerHtml)
+            .replace(/\n+/g, ' ')   // Flatten newlines for table cells
+            .replace(/\|/g, '\\|')  // Escape pipe characters in cell content
+            .trim();
+        } else {
+          content = innerHtml
+            .replace(/\s+/g, ' ')
+            .replace(/\|/g, '\\|')
+            .trim();
+        }
+
+        // Add the cell content
+        cellContents.push(content);
+        // Add empty cells for colspan > 1 (FR-008)
+        for (let i = 1; i < colspan; i++) {
+          cellContents.push('');
+        }
+      }
+
+      return cellContents;
     });
 
-    if (markdownRows.length === 0) {
+    if (parsedRows.length === 0) {
       return tableHtml;
     }
 
-    // Build the table with header separator
-    const result = markdownRows[0] + '\n' +
-                   '| ' + markdownRows[0].split('|').slice(1, -1).map(() => '---').join(' | ') + ' |' +
+    // Normalize column counts: find max and pad shorter rows (FR-008)
+    const maxCols = Math.max(...parsedRows.map(r => r.length));
+    const normalizedRows = parsedRows.map(row => {
+      while (row.length < maxCols) {
+        row.push('');
+      }
+      return row;
+    });
+
+    // Build GFM table
+    const markdownRows = normalizedRows.map(row => `| ${row.join(' | ')} |`);
+    const separator = `| ${Array(maxCols).fill('---').join(' | ')} |`;
+    const result = markdownRows[0] + '\n' + separator +
                    (markdownRows.length > 1 ? '\n' + markdownRows.slice(1).join('\n') : '');
 
     debug(`Converted HTML table to GFM markdown: ${tableHtml.length} chars -> ${result.length} chars`);
@@ -337,8 +491,21 @@ function fixHeadingLevelsFromNumbering(markdown: string): string {
     if (numberMatch) {
       const numbering = numberMatch[1];
       const title = numberMatch[2];
-      const parts = numbering.split('.');
+      const parts = numbering.split('.').filter(p => p !== ''); // remove trailing empty from "1."
       
+      // Exclude version-number patterns (FR-010):
+      // - Any segment is "0" (e.g., "2.0", "1.0.0") — real outlines don't use 0
+      // - More than 3 segments (e.g., "1.2.3.4") — likely a version/IP/ID
+      // - Any segment has more than 2 digits (e.g., "3.14159") — not an outline
+      const isVersionPattern = parts.length > 3 ||
+        parts.some(p => p === '0' || p.length > 2);
+
+      if (isVersionPattern) {
+        // Treat as regular heading — don't adjust level
+        result.push(line);
+        continue;
+      }
+
       // Determine heading level from numbering depth
       // 1 -> H1 (#), 1.1 -> H2 (##), 1.1.1 -> H3 (###), etc.
       const targetLevel = parts.length;
@@ -362,59 +529,115 @@ function fixHeadingLevelsFromNumbering(markdown: string): string {
 }
 
 /**
+ * Default configuration for the HTML preprocessor.
+ * All values reflect current behaviour; override for testing.
+ */
+export const DEFAULT_PREPROCESSOR_CONFIG: PreprocessorConfig = {
+  dangerousTags: ['script', 'noscript', 'template', 'object', 'embed', 'applet'],
+  unwrapTags: ['body'],
+  discardWrapperTags: ['html', 'head'],
+  stripNamespacePrefixes: ['w', 'o'],
+  keepNamespacedTags: ['v:imagedata'],
+  stripClassPrefixes: ['Mso'],
+  stripStylePrefixes: ['mso-'],
+};
+
+/**
  * Pre-processes HTML to remove Word-specific artifacts before conversion.
  * Preserves images and meaningful content while removing styling noise.
  * @param html Raw HTML from clipboard
- * @returns Cleaned HTML ready for Turndown
+ * @param config Optional partial config override (merged with defaults)
+ * @returns PreprocessResult with cleaned HTML and metadata
  */
-function preprocessHtml(html: string): string {
+function preprocessHtml(
+  html: string,
+  config?: Partial<PreprocessorConfig>,
+): PreprocessResult {
+  const cfg: PreprocessorConfig = { ...DEFAULT_PREPROCESSOR_CONFIG, ...config };
   let cleaned = html;
+  let tagsRemoved = 0;
+  let attributesStripped = 0;
+  const warnings: string[] = [];
 
-  // Remove entire <head> section (contains Word styles and metadata)
-  cleaned = cleaned.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '');
+  // --- Dangerous tags: strip tag + content (FR-002) ---
+  for (const tag of cfg.dangerousTags) {
+    const re = new RegExp(`<${tag}[^>]*>[\\s\\S]*?</${tag}>`, 'gi');
+    cleaned = cleaned.replace(re, () => { tagsRemoved++; return ''; });
+    // Self-closing variant
+    const reSelf = new RegExp(`<${tag}[^>]*/?>`, 'gi');
+    cleaned = cleaned.replace(reSelf, () => { tagsRemoved++; return ''; });
+  }
 
-  // Remove <style> tags and their content
-  cleaned = cleaned.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+  // --- Body extraction: unwrap <body>, discard <html>/<head> (FR-003) ---
+  // Extract body content if present
+  const bodyMatch = /<body[^>]*>([\s\S]*)<\/body>/i.exec(cleaned);
+  if (bodyMatch) {
+    cleaned = bodyMatch[1];
+    tagsRemoved += 2; // body open + close
+  }
+  // Discard wrapper tags — only strip open/close tags, NOT matched pairs.
+  // Matched-pair removal (e.g. <html>..content..</html>) is dangerous when
+  // clipboard HTML has nested <html> tags (Teams/Loop), because the lazy
+  // regex eats all content between the inner open tag and close tag.
+  for (const tag of cfg.discardWrapperTags) {
+    cleaned = cleaned.replace(new RegExp(`</?${tag}[^>]*>`, 'gi'), () => { tagsRemoved++; return ''; });
+  }
+  // Remove <!DOCTYPE ...>
+  cleaned = cleaned.replace(/<!DOCTYPE[^>]*>/gi, '');
 
-  // Remove non-image HTML comments (Word puts style definitions in comments)
-  // But preserve conditional comments that might contain VML images
-  // Pattern: keep <!--[if...]>...<![endif]--> that contain v:image or v:shape with image
+  // --- Remove <style> tags and their content ---
+  cleaned = cleaned.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, () => { tagsRemoved++; return ''; });
+
+  // --- Remove non-image HTML comments ---
   cleaned = cleaned.replace(/<!--(?!\[if)[\s\S]*?-->/g, '');
 
-  // Remove <meta> tags
-  cleaned = cleaned.replace(/<meta[^>]*>/gi, '');
+  // --- Remove <meta> tags ---
+  cleaned = cleaned.replace(/<meta[^>]*>/gi, () => { tagsRemoved++; return ''; });
 
-  // Remove <link> tags (stylesheets)
-  cleaned = cleaned.replace(/<link[^>]*>/gi, '');
+  // --- Remove <link> tags (stylesheets) ---
+  cleaned = cleaned.replace(/<link[^>]*>/gi, () => { tagsRemoved++; return ''; });
 
-  // Remove XML namespace declarations and processing instructions
+  // --- Remove XML namespace declarations and processing instructions ---
   cleaned = cleaned.replace(/<\?xml[^>]*\?>/gi, '');
   cleaned = cleaned.replace(/xmlns[^=]*="[^"]*"/gi, '');
 
-  // Remove Word-specific XML tags EXCEPT those containing images
-  // Keep v:imagedata, v:shape with imagedata, o:OLEObject (embedded objects)
-  // Remove empty v:shapetype, w:* formatting tags
-  cleaned = cleaned.replace(/<w:[^>]+>[\s\S]*?<\/w:[^>]+>/gi, '');
-  cleaned = cleaned.replace(/<w:[^>]*\/>/gi, '');
-  cleaned = cleaned.replace(/<\/?w:[^>]*>/gi, '');
-  
+  // --- Remove Word-specific XML namespaced tags (FR-004) ---
+  for (const prefix of cfg.stripNamespacePrefixes) {
+    // Full tags with content: <w:...>...</w:...>
+    cleaned = cleaned.replace(new RegExp(`<${prefix}:[^>]+>[\\s\\S]*?</${prefix}:[^>]+>`, 'gi'), () => { tagsRemoved++; return ''; });
+    // Self-closing: <w:.../>
+    cleaned = cleaned.replace(new RegExp(`<${prefix}:[^>]*/>`, 'gi'), () => { tagsRemoved++; return ''; });
+    // Orphan open/close tags: <w:...> or </w:...>
+    cleaned = cleaned.replace(new RegExp(`</?${prefix}:[^>]*>`, 'gi'), () => { tagsRemoved++; return ''; });
+  }
+
   // Remove v:shapetype definitions (templates, not actual content)
-  cleaned = cleaned.replace(/<v:shapetype[^>]*>[\s\S]*?<\/v:shapetype>/gi, '');
-  
+  cleaned = cleaned.replace(/<v:shapetype[^>]*>[\s\S]*?<\/v:shapetype>/gi, () => { tagsRemoved++; return ''; });
+
   // Remove o:p (paragraph markers) but keep o:OLEObject
-  cleaned = cleaned.replace(/<o:p[^>]*>[\s\S]*?<\/o:p>/gi, '');
-  cleaned = cleaned.replace(/<o:p[^>]*\/>/gi, '');
+  cleaned = cleaned.replace(/<o:p[^>]*>[\s\S]*?<\/o:p>/gi, () => { tagsRemoved++; return ''; });
+  cleaned = cleaned.replace(/<o:p[^>]*\/>/gi, () => { tagsRemoved++; return ''; });
 
-  // Remove class and style attributes that are Word-specific (Mso*)
-  cleaned = cleaned.replace(/\s+class="[^"]*Mso[^"]*"/gi, '');
-  cleaned = cleaned.replace(/\s+style="[^"]*mso-[^"]*"/gi, '');
+  // --- Strip Word-specific class and style attributes (FR-004) ---
+  for (const prefix of cfg.stripClassPrefixes) {
+    const re = new RegExp(`\\s+class="[^"]*${prefix}[^"]*"`, 'gi');
+    cleaned = cleaned.replace(re, () => { attributesStripped++; return ''; });
+  }
+  for (const prefix of cfg.stripStylePrefixes) {
+    const re = new RegExp(`\\s+style="[^"]*${prefix}[^"]*"`, 'gi');
+    cleaned = cleaned.replace(re, () => { attributesStripped++; return ''; });
+  }
 
-  // Clean up empty style attributes
+  // Clean up empty style/class attributes
   cleaned = cleaned.replace(/\s+style=""/gi, '');
   cleaned = cleaned.replace(/\s+class=""/gi, '');
 
-  debug(`Preprocessed HTML: ${html.length} chars -> ${cleaned.length} chars`);
-  return cleaned;
+  debug(`Preprocessed HTML: ${html.length} chars -> ${cleaned.length} chars (removed ${tagsRemoved} tags, ${attributesStripped} attrs)`);
+  return {
+    html: cleaned,
+    warnings,
+    stats: { tagsRemoved, attributesStripped, entitiesDecoded: false },
+  };
 }
 
 /**
@@ -481,8 +704,8 @@ export function htmlToMarkdown(html: string): string {
 
   // Decode HTML entities that are double-encoded HTML tags from Loop/Teams
   // Only decode if we detect escaped HTML tag patterns (e.g., &lt;div class=&quot;)
-  // This preserves literal text like &lt;tag&gt; in normal content
-  if (/&lt;(div|span|style|table|ul|ol|details)\s+(class|id|style)=&quot;/i.test(normalizedHtml)) {
+  // Generalized to any valid HTML tag name + recognized attribute (FR-006)
+  if (/&lt;([a-z][a-z0-9]*)\s+(class|id|style|data-[a-z-]*)=&quot;/i.test(normalizedHtml)) {
     debug('Detected escaped HTML tags from Loop/Teams, decoding entities');
     normalizedHtml = normalizedHtml
       .replace(/&lt;/g, '<')
@@ -533,7 +756,8 @@ export function htmlToMarkdown(html: string): string {
   normalizedHtml = normalizedHtml.replace(/<iframe[^>]*\/>/gi, '');
 
   // Pre-process to remove Word artifacts
-  normalizedHtml = preprocessHtml(normalizedHtml);
+  const preprocessResult = preprocessHtml(normalizedHtml);
+  normalizedHtml = preprocessResult.html;
 
   const service = getTurndownService();
   let markdown = service.turndown(normalizedHtml);
@@ -553,9 +777,8 @@ export function htmlToMarkdown(html: string): string {
 
   // Convert any remaining HTML tables to GFM markdown
   // This catches tables that Turndown didn't convert
-  markdown = markdown.replace(/<table[^>]*>[\s\S]*?<\/table>/gi, (tableHtml) => {
-    return convertHtmlTableToMarkdown(tableHtml);
-  });
+  // Use a function to find outermost tables (handles nested tables correctly)
+  markdown = replaceOutermostTables(markdown);
 
   // Post-process: fix image syntax - encode paths and clean alt text
   // Matches ![alt](path) or ![alt](path "title") including multi-line alt text
@@ -597,12 +820,19 @@ export function htmlToMarkdown(html: string): string {
 
   // Fix TOC links: convert Word-style #_Toc... or #_heading... to proper anchors
   // Match links like [1 INTRODUCCIÓN 4](#_Toc123456) - leading number is section, trailing is page
-  // Remove these TOC links entirely since they don't work in markdown
-  markdown = markdown.replace(/\[([^\]]+)\]\(#_[^)]+\)/g, '');
+  // Preserve the link text as plain text since these anchors don't work in markdown (FR-005)
+  markdown = markdown.replace(/\[([^\]]+)\]\(#_[^)]+\)/g, '$1');
 
   // Detect and fix heading levels from numbered outlines
   // Word numbered lists (1, 1.1, 1.1.1) need to map to heading levels (H1, H2, H3)
   markdown = fixHeadingLevelsFromNumbering(markdown);
+
+  // Detect and replace orphan data URIs (FR-011)
+  const orphanResult = detectOrphanDataUris(markdown);
+  markdown = orphanResult.markdown;
+  if (orphanResult.orphans.length > 0) {
+    debug(`Found ${orphanResult.orphans.length} orphan data URI(s) — replaced with placeholders`);
+  }
 
   // Clean up excessive newlines while preserving paragraph breaks
   const cleaned = markdown
