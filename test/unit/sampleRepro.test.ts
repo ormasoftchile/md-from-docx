@@ -1,13 +1,18 @@
 /**
  * Reproduction test: feed the real sample.txt through htmlToMarkdown()
  * to see the actual broken citation output.
+ *
+ * NOTE: sample.txt contains private data and is .gitignored.
+ * This test skips automatically when the file is absent (e.g. CI).
  */
 import * as fs from 'fs';
 import * as path from 'path';
 import { htmlToMarkdown } from '../../src/conversion/htmlToMarkdown';
 
-describe('Real sample.txt reproduction', () => {
-  const samplePath = path.join(__dirname, '../../specs/004-robust-html-parsing/sample.txt');
+const samplePath = path.join(__dirname, '../../specs/004-robust-html-parsing/sample.txt');
+const hasSample = fs.existsSync(samplePath);
+
+(hasSample ? describe : describe.skip)('Real sample.txt reproduction', () => {
 
   it('should convert sample.txt and not have broken citation fragments like [1](http', () => {
     const html = fs.readFileSync(samplePath, 'utf-8');
