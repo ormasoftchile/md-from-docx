@@ -1,3 +1,12 @@
+## [1.3.4](https://github.com/ormasoftchile/md-from-docx/compare/v1.3.3...v1.3.4) (2026-02-06)
+
+
+### Bug Fixes
+
+* **ci:** skip sampleRepro test when private sample.txt absent, gitignore sample data ([390bb08](https://github.com/ormasoftchile/md-from-docx/commit/390bb08886a7ee72bd9e12a39209bfef2c4c6c8c))
+* Loop/Teams citations render as proper links, strip code-preview toolbar chrome ([af45cff](https://github.com/ormasoftchile/md-from-docx/commit/af45cff9c7dbf1a83ed5abf9071d209a6c9f2d48))
+* strip markdown attribute from tables, repair multi-line GFM rows ([19a2e4a](https://github.com/ormasoftchile/md-from-docx/commit/19a2e4a8c67ce0436066c436e3873e86471baf35))
+
 # [1.3.0](https://github.com/ormasoftchile/md-from-docx/compare/v1.2.0...v1.3.0) (2026-02-04)
 
 
