@@ -1,0 +1,9 @@
+{
+  "name": "004-robust-html-parsing-contracts",
+  "description": "Interface contracts for the robust HTML parsing feature",
+  "version": "1.0.0",
+  "contracts": {
+    "preprocessor": "preprocessor.d.ts",
+    "pipeline": "pipeline.d.ts"
+  }
+}
