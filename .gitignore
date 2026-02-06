@@ -37,3 +37,7 @@ yarn-error.log*
 *.temp
 tmp/
 temp/
+
+# Private sample data (never commit)
+specs/**/sample*.txt
+specs/**/sample-output*
