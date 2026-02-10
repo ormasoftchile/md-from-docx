@@ -2,7 +2,7 @@
   "name": "docx-markdown-converter",
   "displayName": "DOCX to Markdown Converter",
   "description": "Convert Word documents (.docx) to Markdown with automatic image extraction",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "publisher": "focus-space",
   "icon": "images/icon.png",
   "license": "MIT",
