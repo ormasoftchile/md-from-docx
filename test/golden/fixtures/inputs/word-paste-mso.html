@@ -1,0 +1,34 @@
+<!--
+  Golden test fixture: Word paste with MSO artifacts.
+  Tests that MsoNormal, mso-* styles, <o:p> tags, and Office namespaces
+  are properly stripped by the preprocessor.
+-->
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word">
+<head>
+<meta name="ProgId" content="Word.Document">
+<style>
+  p.MsoNormal { margin: 0; mso-style-type: export-only; mso-pagination: widow-orphan; }
+  .MsoTableGrid { mso-tstyle-name: "Table Grid"; border: solid windowtext 1.0pt; }
+</style>
+</head>
+<body>
+<p class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto">
+  This is a <b>Word paste</b> with MSO artifacts.<o:p></o:p>
+</p>
+<p class="MsoNormal" style="mso-bidi-font-size:11.0pt">
+  Second paragraph with <i style="mso-bidi-font-style:normal">italic text</i>.<o:p></o:p>
+</p>
+<table class="MsoTableGrid" border="1" cellspacing="0" cellpadding="0" style="border-collapse:collapse;border:none;mso-border-alt:solid windowtext .5pt">
+  <tr>
+    <td style="border:solid windowtext 1.0pt;mso-border-alt:solid windowtext .5pt;padding:0">
+      <p class="MsoNormal">Cell A</p>
+    </td>
+    <td style="border:solid windowtext 1.0pt;mso-border-alt:solid windowtext .5pt;padding:0">
+      <p class="MsoNormal">Cell B</p>
+    </td>
+  </tr>
+</table>
+<p class="MsoNormal"><o:p>&nbsp;</o:p></p>
+</body>
+</html>

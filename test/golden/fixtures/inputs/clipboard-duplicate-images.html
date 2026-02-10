@@ -1,0 +1,17 @@
+<!--
+  Clipboard duplicate images fixture (T034).
+  Contains the same data URI referenced 3 times.
+  After conversion, all 3 references should point to one extracted image file.
+-->
+<html>
+<body>
+<h1>Document with Duplicate Images</h1>
+<p>First occurrence of the same image:</p>
+<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==" alt="Red pixel">
+<p>Second occurrence (same image data):</p>
+<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==" alt="Red pixel again">
+<p>Third occurrence (same image data):</p>
+<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==" alt="Red pixel third">
+<p>End of document.</p>
+</body>
+</html>

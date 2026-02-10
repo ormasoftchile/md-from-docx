@@ -1,0 +1,28 @@
+<!--
+  Golden test fixture: Microsoft Teams Adaptive Card markup.
+  Tests that Teams-specific card wrappers, FluentUI buttons, and
+  proprietary attributes are handled by the conversion pipeline.
+-->
+<div class="teams-card-wrapper" data-card-type="adaptive">
+  <div class="ac-container" style="background-color: #fff; border: 1px solid #e1e1e1; border-radius: 4px; padding: 16px;">
+    <div class="ac-textBlock" style="font-size: 16px; font-weight: 600; color: #252423;">
+      Meeting Summary: Sprint Planning
+    </div>
+    <div class="ac-textBlock" style="font-size: 14px; color: #605e5c; margin-top: 8px;">
+      <p>Key decisions from today's sprint planning:</p>
+      <ul>
+        <li>Prioritize golden test infrastructure</li>
+        <li>Defer batch conversion to next sprint</li>
+        <li>Review determinism hooks design</li>
+      </ul>
+    </div>
+    <div class="ac-actionSet" style="margin-top: 12px;">
+      <button class="ac-pushButton" style="background-color: #6264a7; color: white; border: none; padding: 6px 12px; border-radius: 3px;">
+        View in Teams
+      </button>
+      <button class="ac-pushButton" style="background-color: transparent; color: #6264a7; border: 1px solid #6264a7; padding: 6px 12px; border-radius: 3px;">
+        Open Meeting Notes
+      </button>
+    </div>
+  </div>
+</div>

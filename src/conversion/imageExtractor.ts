@@ -117,7 +117,9 @@ export function processClipboardImages(
       const outputFormat = normalizeFormat(originalFormat);
       const buffer = dataUriToBuffer(dataUri);
       const filename = generateImageFilename(imageFileNamePattern, index, outputFormat);
-      const relativePath = `./${imagesFolderName}/${filename}`;
+      // URL-encode path segments for markdown compatibility (spaces, unicode, etc.)
+      const encodedFolderName = imagesFolderName.split('/').map(encodeURIComponent).join('/');
+      const relativePath = `./${encodedFolderName}/${encodeURIComponent(filename)}`;
 
       images.push({
         buffer,
@@ -127,8 +129,9 @@ export function processClipboardImages(
         relativePath,
       });
 
-      // Replace data URI in HTML with relative path
-      updatedHtml = updatedHtml.replace(dataUri, relativePath);
+      // Replace ALL occurrences of data URI in HTML with relative path
+      // (same data URI may appear multiple times in the source HTML)
+      updatedHtml = updatedHtml.split(dataUri).join(relativePath);
 
       debug(`Processed clipboard image ${index}: ${originalFormat} -> ${outputFormat}`);
     } catch (err) {

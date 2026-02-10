@@ -1,0 +1,15 @@
+{
+  "$schema": "../../../specs/005-golden-test-determinism/contracts/images-manifest-schema.json",
+  "images": [
+    {
+      "filename": "image-001.png",
+      "sha256": "18ed33080443f2e2ca79eecd629e12d4636c9bc83543a4e45cb8dbe53e0b4be7",
+      "byteLength": 69
+    },
+    {
+      "filename": "image-002.png",
+      "sha256": "18ed33080443f2e2ca79eecd629e12d4636c9bc83543a4e45cb8dbe53e0b4be7",
+      "byteLength": 69
+    }
+  ]
+}

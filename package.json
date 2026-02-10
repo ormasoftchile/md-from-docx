@@ -2,7 +2,7 @@
   "name": "docx-markdown-converter",
   "displayName": "DOCX to Markdown Converter",
   "description": "Convert Word documents (.docx) to Markdown with automatic image extraction",
-  "version": "1.3.4",
+  "version": "1.4.0",
   "publisher": "focus-space",
   "icon": "images/icon.png",
   "license": "MIT",
@@ -113,6 +113,47 @@
           "type": "boolean",
           "default": true,
           "description": "Show success/error notifications after conversion"
+        },
+        "docxMarkdownConverter.markdownFlavor": {
+          "type": "string",
+          "enum": [
+            "default",
+            "gfm",
+            "commonmark"
+          ],
+          "default": "default",
+          "description": "Markdown output flavor. 'default' is an alias for GFM (GitHub-Flavored Markdown).",
+          "enumDescriptions": [
+            "GitHub-Flavored Markdown (tables, task lists, strikethrough)",
+            "GitHub-Flavored Markdown (tables, task lists, strikethrough)",
+            "CommonMark (no GFM extensions like tables)"
+          ]
+        },
+        "docxMarkdownConverter.lineWrapWidth": {
+          "type": [
+            "number",
+            "string"
+          ],
+          "default": "none",
+          "description": "Line wrap width for paragraphs. Set a number for soft-wrap at that column, or 'none' to disable."
+        },
+        "docxMarkdownConverter.headingStrategy": {
+          "type": "string",
+          "enum": [
+            "infer",
+            "preserve"
+          ],
+          "default": "infer",
+          "description": "How to determine heading levels. 'infer' repairs levels from outline numbering; 'preserve' keeps original HTML levels.",
+          "enumDescriptions": [
+            "Infer heading levels from Word outline numbering patterns",
+            "Preserve the original heading levels from the HTML source"
+          ]
+        },
+        "docxMarkdownConverter.imagePathBase": {
+          "type": "string",
+          "default": "",
+          "description": "Base path prefix for image references in output Markdown. Leave empty for relative paths."
         }
       }
     }
@@ -123,6 +164,9 @@
     "watch": "npm run compile -- --watch",
     "test": "jest",
     "test:unit": "jest test/unit",
+    "test:golden": "jest test/golden",
+    "test:golden:update": "cross-env UPDATE_GOLDENS=1 jest test/golden",
+    "test:private": "jest test/golden/privateBenchmark.test.ts",
     "test:integration": "vscode-test",
     "test:functional": "jest test/functional",
     "test:regression": "npx ts-node test/functional/runRegressionTests.ts",
@@ -146,6 +190,7 @@
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^12.0.2",
+    "@types/diff": "^7.0.2",
     "@types/jest": "^29.5.0",
     "@types/node": "^18.x",
     "@types/turndown": "^5.0.4",
@@ -154,6 +199,9 @@
     "@typescript-eslint/parser": "^6.0.0",
     "@vscode/test-electron": "^2.3.8",
     "@vscode/vsce": "^2.22.0",
+    "cross-env": "^10.1.0",
+    "diff": "^8.0.3",
+    "docx": "^9.5.1",
     "esbuild": "^0.27.0",
     "eslint": "^8.56.0",
     "husky": "^9.1.7",

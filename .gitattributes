@@ -1,0 +1,3 @@
+# Ensure consistent line endings for golden test files across all OSes
+test/golden/** text eol=lf
+*.md text eol=lf

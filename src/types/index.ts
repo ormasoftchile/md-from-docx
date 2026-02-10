@@ -61,6 +61,18 @@ export interface ConversionOptions {
 
   /** Whether to show notifications */
   showNotifications: boolean;
+
+  /** Markdown output flavor. 'default' is an alias for 'gfm'. */
+  markdownFlavor: 'gfm' | 'commonmark' | 'default';
+
+  /** Line wrap width. 'none' disables wrapping. */
+  lineWrapWidth: number | 'none';
+
+  /** Whether to infer heading levels from outline numbering or preserve original. */
+  headingStrategy: 'infer' | 'preserve';
+
+  /** Base path for image references. undefined uses relative paths. */
+  imagePathBase?: string;
 }
 
 /**
@@ -203,6 +215,48 @@ export interface OrphanDataUriResult {
   }>;
 }
 
+// ─── Golden Test Infrastructure (005-golden-test-determinism) ────────────────
+
+/**
+ * Test-only injection point for producing reproducible, deterministic output.
+ * All fields are optional — `undefined` ≡ production behavior.
+ * Type lives in src/types so the pipeline can accept it as an optional parameter;
+ * hook construction and injection happen only in test/ code.
+ */
+export interface DeterminismHook {
+  /** Fixed document name (overrides runtime resolution) */
+  docName?: string;
+
+  /** Fixed image naming function (overrides default sequential naming) */
+  imageNamingStrategy?: (index: number, format: string) => string;
+
+  /** Fixed output directory (overrides computed output paths) */
+  outputBasePath?: string;
+
+  /** Fixed timestamp for paste filename generation */
+  timestamp?: string;
+}
+
+// ─── Extended Conversion Options (FR-031) ────────────────────────────────────
+
+/**
+ * User-configurable options controlling Markdown output flavor and style.
+ * These extend the base ConversionOptions with settings knobs.
+ */
+export interface ExtendedConversionFields {
+  /** Markdown output flavor. 'default' is an alias for 'gfm'. */
+  markdownFlavor?: 'gfm' | 'commonmark' | 'default';
+
+  /** Line wrap width. 'none' disables wrapping. */
+  lineWrapWidth?: number | 'none';
+
+  /** Whether to infer heading levels from outline numbering or preserve original. */
+  headingStrategy?: 'infer' | 'preserve';
+
+  /** Base path for image references. undefined uses relative paths. */
+  imagePathBase?: string;
+}
+
 /**
  * Default conversion options matching VS Code settings defaults.
  */
@@ -214,4 +268,8 @@ export const DEFAULT_CONVERSION_OPTIONS: ConversionOptions = {
   pasteTarget: 'newFile',
   openAfterConversion: true,
   showNotifications: true,
+  markdownFlavor: 'default',
+  lineWrapWidth: 'none',
+  headingStrategy: 'infer',
+  imagePathBase: undefined,
 };

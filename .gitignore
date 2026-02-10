@@ -41,3 +41,6 @@ temp/
 # Private sample data (never commit)
 specs/**/sample*.txt
 specs/**/sample-output*
+
+# Private golden test fixtures (never commit)
+test/golden/private/

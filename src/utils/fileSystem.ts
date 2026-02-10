@@ -169,6 +169,26 @@ export async function ensureParentDir(filePath: string): Promise<void> {
 }
 
 /**
+ * Returns a unique folder path, appending -1, -2, etc. if the folder already exists.
+ * @param baseFolderPath Base folder path (without trailing suffix)
+ * @returns A folder path that does not yet exist
+ */
+export async function getUniqueFolderPath(baseFolderPath: string): Promise<string> {
+  if (!(await exists(baseFolderPath))) {
+    return baseFolderPath;
+  }
+
+  let counter = 1;
+  let candidate = `${baseFolderPath}-${counter}`;
+  while (await exists(candidate)) {
+    counter++;
+    candidate = `${baseFolderPath}-${counter}`;
+  }
+
+  return candidate;
+}
+
+/**
  * Validates that a workspace folder is open and returns the first workspace folder.
  * @returns The first workspace folder URI
  * @throws Error if no workspace folder is open
