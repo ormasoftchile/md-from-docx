@@ -174,11 +174,18 @@ npm run watch          # Rebuild on changes
 ### Testing
 
 ```bash
-npm test               # Run unit tests (Jest)
+npm test               # Run all tests (Jest)
 npm run test:unit      # Unit tests only
 npm run test:functional # Functional tests
 npm run test:regression # Regression tests against real DOCX files
 npm run test:coverage  # Coverage report
+
+# Golden tests (deterministic output verification)
+npm run test:golden          # Run golden snapshot tests
+npm run test:golden:update   # Regenerate golden snapshots
+
+# Private benchmarks (local real-world DOCX collection)
+cross-env MD_FROM_DOCX_PRIVATE_FIXTURES=/path/to/dir npm run test:private
 ```
 
 ### Packaging & Publishing

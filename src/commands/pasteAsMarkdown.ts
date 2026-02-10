@@ -15,6 +15,7 @@ import {
   getWorkspaceFolder,
   exists,
   getUniquePath,
+  getUniqueFolderPath,
 } from '../utils/fileSystem';
 import { info, error as logError, debug } from '../utils/logging';
 
@@ -190,7 +191,9 @@ async function createNewMarkdownFile(
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const baseName = `paste-${timestamp}`;
   const imagesFolderName = resolveImagesFolderName(settings.imagesFolderName, baseName);
-  const imagesFolderPath = joinPath(workspacePath, imagesFolderName);
+  let imagesFolderPath = joinPath(workspacePath, imagesFolderName);
+  // Avoid folder collisions — append -1, -2, etc. if needed
+  imagesFolderPath = await getUniqueFolderPath(imagesFolderPath);
 
   // Determine markdown file path
   let markdownPath = joinPath(workspacePath, `${baseName}.md`);

@@ -1,0 +1,45 @@
+<!--
+  Golden test fixture: Microsoft Loop citation links.
+  Tests that Loop-specific citation link markup, TL;DR cards,
+  and metric/insight cards are properly converted.
+-->
+<div class="loop-component" data-loop-type="page">
+  <h2>Project Status Update</h2>
+  <p>The conversion pipeline has been updated as discussed in
+    <a href="https://loop.microsoft.com/page/abc123" class="loop-citation-link"
+       data-citation-type="page" data-citation-id="abc123">
+      Sprint Retrospective Notes
+    </a>. Key metrics from
+    <a href="https://loop.microsoft.com/page/def456" class="loop-citation-link"
+       data-citation-type="page" data-citation-id="def456">
+      Q4 Performance Report
+    </a> show improvement.
+  </p>
+
+  <div class="loop-card loop-tldr" data-card-type="tldr">
+    <div class="loop-card-header">TL;DR</div>
+    <div class="loop-card-body">
+      <p>Golden test suite implementation is on track. Three P1 user stories completed.
+         Two P2 stories in progress.</p>
+    </div>
+  </div>
+
+  <div class="loop-card loop-metric" data-card-type="metric">
+    <div class="loop-metric-value">98.5%</div>
+    <div class="loop-metric-label">Test Pass Rate</div>
+  </div>
+
+  <div class="loop-card loop-insight" data-card-type="insight">
+    <div class="loop-card-header">Key Insight</div>
+    <div class="loop-card-body">
+      <p>Deterministic output reduces flaky test rate by <strong>73%</strong>.</p>
+    </div>
+  </div>
+
+  <p>For implementation details, see
+    <a href="https://loop.microsoft.com/page/ghi789" class="loop-citation-link"
+       data-citation-type="page" data-citation-id="ghi789">
+      Architecture Decision Records
+    </a>.
+  </p>
+</div>

@@ -1,0 +1,98 @@
+<!--
+  Golden test fixture: Loop table paste with block-level wrappers.
+  Reproduces the bug where <div>, <p>, and <ul>/<li> inside <td>/<th>
+  cells cause Turndown to break GFM table row formatting.
+
+  Tests:
+  - <div><p>...</p></div> wrappers inside cells → unwrapped to inline
+  - <ul><li> lists inside cells → flattened to comma-separated text
+  - markdown="" attribute on <table> → stripped (no leakage)
+  - Loop outer <tbody> layout wrapper → ignored
+  - Empty cells survive
+  - Multi-item notes stay inside the table row
+-->
+<html>
+<body>
+<!--StartFragment--><html contenteditable="false"><head><style>
+html, body { margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif; font-size: 14px; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #e1e1e1; padding: 6px 8px; }
+th { background-color: #f5f5f5; font-weight: 600; }
+</style></head><tbody contenteditable="false"><tr><td style="vertical-align: top;">
+<div style="font-family:'Segoe UI';font-size:14px;">
+<table class="___12ckvhj" markdown="| Phase | Milestone | Status | ETA | Notes |
+|---|---|---|---|---|
+| Ideation/POC | One Tool - DRIWorkbench ASC porting POC | ✅ DONE | Fri, May 30, 2025 |  |
+| PrPr | PrPr of &quot;One Tool&quot; DRIWorkbench for ASC | 🔄 In Progress | Fri, Jan 30 | User testing |" tabindex="-1">
+<thead><tr><th><div><p>Phase</p></div></th><th><div><p>Milestone</p></div></th><th><div><p>Status</p></div></th><th><div><p>ETA</p></div></th><th><div><p>Notes</p></div></th></tr></thead>
+<tbody>
+<tr>
+<td><div><p>Ideation/POC</p></div></td>
+<td><div><p>One Tool - DRIWorkbench ASC porting POC</p></div></td>
+<td><div><p>✅ DONE</p></div></td>
+<td><div><p>Fri, May 30, 2025</p></div></td>
+<td><div><p></p></div></td>
+</tr>
+<tr>
+<td><div><p>Perf Diagnostics</p></div></td>
+<td><div><p>DRIWorkbench with ASC - perf diagnostics</p></div></td>
+<td><div><p>✅ DONE</p></div></td>
+<td><div><p>Tue, Jul 15, 2025</p></div></td>
+<td><div><p></p></div></td>
+</tr>
+<tr>
+<td><div><p>Reporting</p></div></td>
+<td><div><p>Reporting feature and User testing</p></div></td>
+<td><div><p>✅ DONE</p></div></td>
+<td><div><p>Mon, Dec 15, 2025</p></div></td>
+<td><div><ul><li>Decided to add reporting</li><li>Lead change due to change in focus on MPD</li><li>Reporting feature code complete</li><li>Bugs found, pending deployment</li></ul></div></td>
+</tr>
+<tr>
+<td><div><p>PrPr</p></div></td>
+<td><div><p>PrPr of "One Tool" DRIWorkbench for ASC</p></div></td>
+<td><div><p>🔄 In Progress</p></div></td>
+<td><div><p>Fri, Jan 30</p></div></td>
+<td><div><ul><li>User testing</li><li>Telemetry</li><li>Performance benchmarking</li></ul></div></td>
+</tr>
+<tr>
+<td><div><p>PrPr</p></div></td>
+<td><div><p>Support Internal DBs</p></div></td>
+<td><div><p>🔄 In progress</p></div></td>
+<td><div><p>Sun, Feb 15</p></div></td>
+<td><div><p></p></div></td>
+</tr>
+<tr>
+<td><div><p>PrPr</p></div></td>
+<td><div><p>Support MI databases</p></div></td>
+<td><div><p>🔄 In planning</p></div></td>
+<td><div><p></p></div></td>
+<td><div><p></p></div></td>
+</tr>
+<tr>
+<td><div><p>PrPr</p></div></td>
+<td><div><p>Kusto Access issue</p></div></td>
+<td><div><p>🔄 In progress</p></div></td>
+<td><div><p>Sat, Feb 28</p></div></td>
+<td><div><p></p></div></td>
+</tr>
+<tr>
+<td><div><p>PuPr</p></div></td>
+<td><div><p>Auto-execute ASC and enrich ICM for Perf incidents (similar to old ASC)</p></div></td>
+<td><div><p>✖️ Not Started</p></div></td>
+<td><div><p></p></div></td>
+<td><div><p>Product Backlog Item 5005399: ICM enrichment with DRIWorkbench report</p><p>Pending ETA of ETA: 02/18</p></div></td>
+</tr>
+<tr>
+<td><div><p>PuPr</p></div></td>
+<td><div><p>PuPr of "One Tool" DRIWorkbench for ASC</p></div></td>
+<td><div><p>✖️ Not Started</p></div></td>
+<td><div><p>Tue, Mar 31</p></div></td>
+<td><div><ul><li>Deployment pipelines</li><li>Security review</li><li>Security improvements</li></ul></div></td>
+</tr>
+</tbody>
+</table>
+</div>
+</td></tr><tr></tr></tbody></html><!--EndFragment-->
+</body>
+</html>

@@ -1,7 +1,7 @@
 /**
  * Unified conversion pipeline orchestrating DOCX parsing, HTML-to-Markdown, and image extraction
  */
-import { ConversionResult, ConversionSource, ConversionOptions, OutputPaths } from '../types';
+import { ConversionResult, ConversionSource, ConversionOptions, OutputPaths, DeterminismHook } from '../types';
 import { parseDocx, isEmptyDocument } from './docxParser';
 import { htmlToMarkdown } from './htmlToMarkdown';
 import { processClipboardImages, writeImages } from './imageExtractor';
@@ -13,18 +13,20 @@ import { debug, info, warn } from '../utils/logging';
  * Main conversion function that handles both DOCX files and clipboard content.
  * @param source The input source (DOCX file path or clipboard data)
  * @param options Conversion options from settings
+ * @param hooks Optional determinism hooks for reproducible test output
  * @returns ConversionResult with markdown and image data
  */
 export async function convert(
   source: ConversionSource,
-  options: ConversionOptions
+  options: ConversionOptions,
+  hooks?: DeterminismHook
 ): Promise<ConversionResult> {
   debug('Starting conversion', { sourceType: source.type });
 
   if (source.type === 'docx') {
-    return convertDocxFile(source.filePath, options);
+    return convertDocxFile(source.filePath, options, hooks);
   } else {
-    return convertClipboardContent(source.html, source.images, options);
+    return convertClipboardContent(source.html, source.images, options, hooks);
   }
 }
 
@@ -32,13 +34,15 @@ export async function convert(
  * Converts a DOCX file to Markdown with images.
  * @param filePath Absolute path to the DOCX file
  * @param options Conversion options
+ * @param hooks Optional determinism hooks for reproducible test output
  * @returns ConversionResult
  */
 export async function convertDocxFile(
   filePath: string,
-  options: ConversionOptions
+  options: ConversionOptions,
+  hooks?: DeterminismHook
 ): Promise<ConversionResult> {
-  const docName = basename(filePath, '.docx');
+  const docName = hooks?.docName ?? basename(filePath, '.docx');
   const imagesFolderName = resolveImagesFolderName(options.imagesFolderName, docName);
 
   debug(`Converting DOCX: ${filePath}`);
@@ -61,13 +65,22 @@ export async function convertDocxFile(
   }
 
   // Convert HTML to Markdown
-  const markdown = htmlToMarkdown(parseResult.html);
+  let markdown = htmlToMarkdown(parseResult.html);
 
-  info(`Conversion complete: ${parseResult.images.length} images extracted`);
+  // Enforce LF line endings (T013: deterministic output)
+  markdown = markdown.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  // Enforce forward-slash path separators in image relative paths
+  const images = parseResult.images.map(img => ({
+    ...img,
+    relativePath: img.relativePath.replace(/\\/g, '/'),
+  }));
+
+  info(`Conversion complete: ${images.length} images extracted`);
 
   return {
     markdown,
-    images: parseResult.images,
+    images,
     warnings: parseResult.warnings,
   };
 }
@@ -77,16 +90,19 @@ export async function convertDocxFile(
  * @param html HTML content from clipboard
  * @param images Array of image data URIs from clipboard
  * @param options Conversion options
+ * @param hooks Optional determinism hooks for reproducible test output
  * @returns ConversionResult
  */
 export function convertClipboardContent(
   html: string,
   images: Array<{ dataUri: string; index: number }>,
-  options: ConversionOptions
+  options: ConversionOptions,
+  hooks?: DeterminismHook
 ): ConversionResult {
   debug(`Converting clipboard content: ${html.length} chars, ${images.length} images`);
 
-  const imagesFolderName = resolveImagesFolderName(options.imagesFolderName, 'paste');
+  const docName = hooks?.docName ?? 'paste';
+  const imagesFolderName = resolveImagesFolderName(options.imagesFolderName, docName);
 
   // Process clipboard images
   const imageDataUris = images.map((img) => img.dataUri);
@@ -98,13 +114,22 @@ export function convertClipboardContent(
   );
 
   // Convert HTML to Markdown
-  const markdown = htmlToMarkdown(updatedHtml);
+  let markdown = htmlToMarkdown(updatedHtml);
 
-  info(`Clipboard conversion complete: ${processedImages.length} images extracted`);
+  // Enforce LF line endings (T013: deterministic output)
+  markdown = markdown.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  // Enforce forward-slash path separators in image relative paths
+  const normalizedImages = processedImages.map(img => ({
+    ...img,
+    relativePath: img.relativePath.replace(/\\/g, '/'),
+  }));
+
+  info(`Clipboard conversion complete: ${normalizedImages.length} images extracted`);
 
   return {
     markdown,
-    images: processedImages,
+    images: normalizedImages,
     warnings: [],
   };
 }

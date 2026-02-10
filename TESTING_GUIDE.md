@@ -110,11 +110,94 @@ Then:
 | `npm run test:unit` | Unit tests only |
 | `npm run test:functional` | Functional/integration tests |
 | `npm run test:regression` | Regression test suite |
+| `npm run test:golden` | Golden snapshot tests |
+| `npm run test:golden:update` | Regenerate golden snapshots |
+| `npm run test:private` | Private benchmark (requires env var) |
 | `npm run test:all` | All tests + regression |
 | `npm run test:watch` | Watch mode (auto-rerun) |
 | `npm run test:coverage` | Generate coverage report |
 | `npm run lint` | Check code style |
 | `npm run lint -- --fix` | Auto-fix linting issues |
+
+---
+
+## Golden Test Architecture
+
+The golden test suite ensures **deterministic, regression-free** conversion output. Every conversion produces byte-identical Markdown and images across runs and operating systems.
+
+### Structure
+
+```
+test/golden/
+  fixtures.json            # Manifest of all fixtures (IDs, types, invariants)
+  goldenRunner.ts          # Test harness: conversion, comparison, image manifest
+  goldenRunner.test.ts     # Main golden test suite
+  determinism.test.ts      # Triple-run determinism verification
+  invariants.test.ts       # Invariant safety-net checks per fixture
+  fixturesManifest.test.ts # Validates fixtures.json schema & file existence
+  privateBenchmark.test.ts # Optional private DOCX benchmark
+  fixtures/
+    inputs/                # Source DOCX and HTML fixtures
+    expected/              # Checked-in golden snapshots (.md + image manifests)
+test/utils/
+  normalize.ts             # Output normalizer (CRLF→LF, blank-line collapse)
+  invariants.ts            # 7 invariant rules (no scripts, no Mso, etc.)
+```
+
+### Adding a New Fixture
+
+1. Place the `.docx` or `.html` file in `test/golden/fixtures/inputs/`.
+2. Add an entry to `test/golden/fixtures.json`:
+   ```json
+   {
+     "id": "my-fixture",
+     "type": "docx",
+     "input": "inputs/my-fixture.docx",
+     "expected": "expected/my-fixture.md",
+     "invariants": ["no-script-tags", "no-mso-artifacts"]
+   }
+   ```
+3. Generate the golden snapshot:
+   ```bash
+   npm run test:golden:update
+   ```
+4. Review the generated `expected/my-fixture.md` file.
+5. Commit both the input and expected files.
+
+### Updating Golden Snapshots
+
+When you intentionally change conversion behavior:
+
+```bash
+npm run test:golden:update   # Regenerate all snapshots
+git diff test/golden/fixtures/expected/   # Review changes
+npm run test:golden          # Verify round-trip passes
+```
+
+### Invariant Rules
+
+Every fixture output is checked against semantic invariants:
+
+| Rule | Description |
+|------|-------------|
+| `no-script-tags` | No `<script>` tags survive |
+| `no-javascript-uri` | No `javascript:` URIs |
+| `no-inline-style` | No `style="..."` attributes |
+| `no-mso-artifacts` | No Word `Mso*` classes or `<o:p>` tags |
+| `no-empty-image-src` | No images with empty `src` |
+| `gfm-table-pipe-consistency` | Table rows have consistent pipe counts |
+| `stable-anchors` | Heading anchors are deterministic |
+
+### Private Benchmarks
+
+Test against your own real-world DOCX files without committing them:
+
+```bash
+# Point to a folder of DOCX files
+cross-env MD_FROM_DOCX_PRIVATE_FIXTURES=/path/to/docs npm run test:private
+```
+
+The test converts every `.docx` file, runs all invariant checks, and prints a pass/fail summary. Outputs go to a temp directory and are automatically cleaned up.
 
 ---
 

@@ -1,0 +1,76 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "fixtures-schema.json",
+  "title": "Golden Test Fixtures Manifest",
+  "description": "Declares all golden test fixtures for the md-from-docx test suite.",
+  "type": "object",
+  "required": ["$schema", "fixtures"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference for editor autocompletion."
+    },
+    "fixtures": {
+      "type": "array",
+      "description": "List of golden test fixtures.",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/Fixture"
+      }
+    }
+  },
+  "definitions": {
+    "Fixture": {
+      "type": "object",
+      "required": ["id", "type", "input", "expected", "invariants"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+          "description": "Unique kebab-case identifier, e.g., 'tables-nested'."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["docx", "clipboard"],
+          "description": "Input source type: 'docx' for DOCX files, 'clipboard' for HTML clipboard input."
+        },
+        "input": {
+          "type": "string",
+          "description": "Relative path from fixtures root to the input file, e.g., 'inputs/tables-nested.docx'."
+        },
+        "expected": {
+          "type": "string",
+          "description": "Relative path from fixtures root to the expected Markdown file, e.g., 'expected/tables-nested.md'."
+        },
+        "imagesManifest": {
+          "type": ["string", "null"],
+          "description": "Relative path to the images manifest JSON, or null if no images expected."
+        },
+        "invariants": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "no-script-tags",
+              "no-javascript-uri",
+              "no-inline-style",
+              "no-mso-artifacts",
+              "no-empty-image-src",
+              "gfm-table-pipe-consistency",
+              "stable-anchors"
+            ]
+          },
+          "minItems": 2,
+          "uniqueItems": true,
+          "description": "Invariant rule IDs to verify against the output. At least 2 required per fixture."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of what the fixture tests."
+        }
+      }
+    }
+  }
+}
