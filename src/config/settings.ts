@@ -42,7 +42,32 @@ export function getSettings(): ConversionOptions {
       'showNotifications',
       DEFAULT_CONVERSION_OPTIONS.showNotifications
     ),
+    markdownFlavor: mapFlavorSetting(
+      config.get<'gfm' | 'commonmark' | 'default'>(
+        'markdownFlavor',
+        DEFAULT_CONVERSION_OPTIONS.markdownFlavor
+      )
+    ),
+    lineWrapWidth: config.get<number | 'none'>(
+      'lineWrapWidth',
+      DEFAULT_CONVERSION_OPTIONS.lineWrapWidth
+    ),
+    headingStrategy: config.get<'infer' | 'preserve'>(
+      'headingStrategy',
+      DEFAULT_CONVERSION_OPTIONS.headingStrategy
+    ),
+    imagePathBase: config.get<string | undefined>(
+      'imagePathBase',
+      DEFAULT_CONVERSION_OPTIONS.imagePathBase
+    ),
   };
+}
+
+/**
+ * Maps the "default" flavor alias to "gfm".
+ */
+function mapFlavorSetting(value: 'gfm' | 'commonmark' | 'default'): 'gfm' | 'commonmark' | 'default' {
+  return value === 'default' ? 'gfm' : value;
 }
 
 /**

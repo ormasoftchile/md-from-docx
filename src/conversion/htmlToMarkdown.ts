@@ -9,6 +9,7 @@ import type { PreprocessorConfig, PreprocessResult } from '../types';
 
 // Create and configure Turndown service
 let turndownService: TurndownService | undefined;
+let currentFlavor: string = 'gfm';
 
 interface TurndownNode {
   getAttribute(name: string): string | null;
@@ -18,9 +19,15 @@ interface TurndownNode {
  * Gets or creates the configured Turndown service instance.
  * @returns Configured TurndownService
  */
-function getTurndownService(): TurndownService {
-  if (!turndownService) {
-    turndownService = new TurndownService({
+function getTurndownService(flavor: 'gfm' | 'commonmark' | 'default' = 'gfm'): TurndownService {
+  const resolvedFlavor = flavor === 'default' ? 'gfm' : flavor;
+
+  if (turndownService && currentFlavor === resolvedFlavor) {
+    return turndownService;
+  }
+
+  // (Re)create the service for the requested flavor
+  turndownService = new TurndownService({
       headingStyle: 'atx', // Use # for headings
       hr: '---',
       bulletListMarker: '-',
@@ -33,8 +40,11 @@ function getTurndownService(): TurndownService {
     });
 
     // Add GitHub Flavored Markdown support (tables, strikethrough, task lists)
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    turndownService.use(gfm);
+    // Only for GFM flavor; CommonMark skips these extensions
+    if (resolvedFlavor === 'gfm') {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      turndownService.use(gfm);
+    }
 
     // Override heading conversion to respect HTML heading levels
     // Word Online might output Heading 2 as <h1>, so we need to track styles
@@ -231,8 +241,8 @@ function getTurndownService(): TurndownService {
       },
     });
 
-    debug('TurndownService initialized with GFM plugin');
-  }
+    debug(`TurndownService initialized with ${resolvedFlavor.toUpperCase()} flavor`);
+    currentFlavor = resolvedFlavor;
 
   return turndownService;
 }
@@ -667,6 +677,38 @@ function preprocessHtml(
   cleaned = cleaned.replace(/\s+markdown="[^"]*"/gi, () => { attributesStripped++; return ''; });
   cleaned = cleaned.replace(/\s+node="[^"]*"/gi, () => { attributesStripped++; return ''; });
 
+  // --- Unwrap block-level elements inside table cells (Loop/Teams fix) ---
+  // Loop and Teams wrap cell content in <div>, <p>, and <ul>/<ol> tags, which
+  // Turndown treats as block-level elements, inserting newlines that break GFM
+  // table row formatting. We unwrap/flatten these inside <td>/<th> cells so
+  // Turndown only sees inline content.
+  cleaned = cleaned.replace(
+    /(<t[hd][^>]*>)([\s\S]*?)(<\/t[hd]>)/gi,
+    (_match: string, open: string, inner: string, close: string) => {
+      let unwrapped = inner;
+
+      // --- Flatten lists to inline text ---
+      // Convert <li>...</li> items to plain text separated by commas,
+      // then strip the <ul>/<ol> wrapper tags.
+      // First, handle list-item boundaries: </li><li> → ", "
+      unwrapped = unwrapped.replace(/<\/li>\s*<li[^>]*>/gi, ', ');
+      // Strip <ul>, </ul>, <ol>, </ol> wrapper tags
+      unwrapped = unwrapped.replace(/<\/?(?:ul|ol)[^>]*>/gi, '');
+      // Strip opening <li> and closing </li> tags
+      unwrapped = unwrapped.replace(/<\/?li[^>]*>/gi, '');
+
+      // --- Flatten paragraphs and divs ---
+      // Replace </p><p> boundaries with <br> to preserve multi-paragraph content
+      unwrapped = unwrapped.replace(/<\/p>\s*<p[^>]*>/gi, '<br>');
+      // Replace </div><div> boundaries with <br> too
+      unwrapped = unwrapped.replace(/<\/div>\s*<div[^>]*>/gi, '<br>');
+      // Strip remaining open/close tags for p and div (unwrap content)
+      unwrapped = unwrapped.replace(/<\/?(?:p|div)[^>]*>/gi, '');
+
+      return open + unwrapped + close;
+    }
+  );
+
   // --- Remove Word-specific XML namespaced tags (FR-004) ---
   for (const prefix of cfg.stripNamespacePrefixes) {
     // Full tags with content: <w:...>...</w:...>
@@ -707,11 +749,24 @@ function preprocessHtml(
 }
 
 /**
+ * Options for the htmlToMarkdown function.
+ */
+export interface HtmlToMarkdownOptions {
+  /** Markdown flavor: 'gfm' (default), 'commonmark', or 'default' (alias for gfm) */
+  markdownFlavor?: 'gfm' | 'commonmark' | 'default';
+  /** Heading strategy: 'infer' (default) or 'preserve' */
+  headingStrategy?: 'infer' | 'preserve';
+}
+
+/**
  * Converts HTML to Markdown using Turndown with GFM support.
  * @param html HTML content to convert
+ * @param options Optional conversion options
  * @returns Markdown string
  */
-export function htmlToMarkdown(html: string): string {
+export function htmlToMarkdown(html: string, options?: HtmlToMarkdownOptions): string {
+  const flavor = options?.markdownFlavor ?? 'gfm';
+  const headingStrategy = options?.headingStrategy ?? 'infer';
   if (!html || html.trim().length === 0) {
     debug('Empty HTML input, returning empty string');
     return '';
@@ -865,7 +920,7 @@ export function htmlToMarkdown(html: string): string {
   const preprocessResult = preprocessHtml(normalizedHtml);
   normalizedHtml = preprocessResult.html;
 
-  const service = getTurndownService();
+  const service = getTurndownService(flavor);
   let markdown = service.turndown(normalizedHtml);
 
   // Post-process: Strip only Word Online-specific artifacts, not general HTML
@@ -937,7 +992,10 @@ export function htmlToMarkdown(html: string): string {
 
   // Detect and fix heading levels from numbered outlines
   // Word numbered lists (1, 1.1, 1.1.1) need to map to heading levels (H1, H2, H3)
-  markdown = fixHeadingLevelsFromNumbering(markdown);
+  // Only when headingStrategy is 'infer' (default); 'preserve' skips this
+  if (headingStrategy === 'infer') {
+    markdown = fixHeadingLevelsFromNumbering(markdown);
+  }
 
   // Detect and replace orphan data URIs (FR-011)
   const orphanResult = detectOrphanDataUris(markdown);

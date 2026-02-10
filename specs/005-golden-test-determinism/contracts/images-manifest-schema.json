@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "images-manifest-schema.json",
+  "title": "Golden Test Images Manifest",
+  "description": "Expected images for a golden test fixture. Each entry declares the expected filename, SHA-256 hash, and byte size of an extracted image.",
+  "type": "object",
+  "required": ["$schema", "images"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference for editor autocompletion."
+    },
+    "images": {
+      "type": "array",
+      "description": "List of expected images. Must be sorted by filename for deterministic comparison.",
+      "items": {
+        "$ref": "#/definitions/ImageManifestEntry"
+      }
+    }
+  },
+  "definitions": {
+    "ImageManifestEntry": {
+      "type": "object",
+      "required": ["filename", "sha256", "byteLength"],
+      "additionalProperties": false,
+      "properties": {
+        "filename": {
+          "type": "string",
+          "pattern": "^image-\\d{3}\\.(png|jpg|jpeg|gif|bmp|svg|webp|tiff|emf|wmf)$",
+          "description": "Expected image filename, e.g., 'image-001.png'. Uses zero-padded sequential numbering."
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "Hex-encoded SHA-256 hash of the image file content."
+        },
+        "byteLength": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Size of the image file in bytes."
+        }
+      }
+    }
+  }
+}

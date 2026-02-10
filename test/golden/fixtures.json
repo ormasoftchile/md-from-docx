@@ -1,0 +1,131 @@
+{
+  "$schema": "../../specs/005-golden-test-determinism/contracts/fixtures-schema.json",
+  "fixtures": [
+    {
+      "id": "tables-nested",
+      "type": "docx",
+      "input": "inputs/tables-nested.docx",
+      "expected": "expected/tables-nested.md",
+      "imagesManifest": null,
+      "invariants": ["no-script-tags", "no-mso-artifacts", "gfm-table-pipe-consistency"],
+      "description": "DOCX with a table nested inside another table cell"
+    },
+    {
+      "id": "tables-colspan",
+      "type": "docx",
+      "input": "inputs/tables-colspan.docx",
+      "expected": "expected/tables-colspan.md",
+      "imagesManifest": null,
+      "invariants": ["no-script-tags", "no-mso-artifacts", "gfm-table-pipe-consistency"],
+      "description": "DOCX with column-spanning table cells"
+    },
+    {
+      "id": "headings-outline-numbering",
+      "type": "docx",
+      "input": "inputs/headings-outline-numbering.docx",
+      "expected": "expected/headings-outline-numbering.md",
+      "imagesManifest": null,
+      "invariants": ["no-script-tags", "no-mso-artifacts", "stable-anchors"],
+      "description": "DOCX with outline-numbered headings (1, 1.1, 1.2, 2, etc.)"
+    },
+    {
+      "id": "images-spaces-unicode",
+      "type": "docx",
+      "input": "inputs/images-spaces-unicode.docx",
+      "expected": "expected/images-spaces-unicode.md",
+      "imagesManifest": "expected/images-spaces-unicode.images-manifest.json",
+      "invariants": ["no-script-tags", "no-mso-artifacts", "no-empty-image-src"],
+      "description": "DOCX with embedded images and unicode text (résumé, naïve)"
+    },
+    {
+      "id": "lists-mixed",
+      "type": "docx",
+      "input": "inputs/lists-mixed.docx",
+      "expected": "expected/lists-mixed.md",
+      "imagesManifest": null,
+      "invariants": ["no-script-tags", "no-mso-artifacts"],
+      "description": "DOCX with mixed ordered and unordered lists including nesting"
+    },
+    {
+      "id": "footnotes-simple",
+      "type": "docx",
+      "input": "inputs/footnotes-simple.docx",
+      "expected": "expected/footnotes-simple.md",
+      "imagesManifest": null,
+      "invariants": ["no-script-tags", "no-mso-artifacts"],
+      "description": "DOCX with footnote references and footnote content"
+    },
+    {
+      "id": "word-paste-mso",
+      "type": "clipboard",
+      "input": "inputs/word-paste-mso.html",
+      "expected": "expected/word-paste-mso.md",
+      "imagesManifest": null,
+      "invariants": ["no-script-tags", "no-mso-artifacts", "no-inline-style", "gfm-table-pipe-consistency"],
+      "description": "Word paste HTML with MsoNormal, mso-* styles, <o:p> tags, Office namespaces"
+    },
+    {
+      "id": "teams-card",
+      "type": "clipboard",
+      "input": "inputs/teams-card.html",
+      "expected": "expected/teams-card.md",
+      "imagesManifest": null,
+      "invariants": ["no-script-tags", "no-javascript-uri"],
+      "description": "Teams Adaptive Card markup with FluentUI buttons"
+    },
+    {
+      "id": "loop-citations",
+      "type": "clipboard",
+      "input": "inputs/loop-citations.html",
+      "expected": "expected/loop-citations.md",
+      "imagesManifest": null,
+      "invariants": ["no-script-tags", "no-javascript-uri"],
+      "description": "Loop citation links, TL;DR card, metric card, insight card"
+    },
+    {
+      "id": "iframe-srcdoc",
+      "type": "clipboard",
+      "input": "inputs/iframe-srcdoc.html",
+      "expected": "expected/iframe-srcdoc.md",
+      "imagesManifest": null,
+      "invariants": ["no-script-tags", "no-inline-style", "gfm-table-pipe-consistency"],
+      "description": "HTML with iframe srcdoc attribute containing embedded content"
+    },
+    {
+      "id": "whitespace-excessive",
+      "type": "clipboard",
+      "input": "inputs/whitespace-excessive.html",
+      "expected": "expected/whitespace-excessive.md",
+      "imagesManifest": null,
+      "invariants": ["no-script-tags", "no-mso-artifacts", "gfm-table-pipe-consistency"],
+      "description": "HTML with excessive blank spacer paragraphs, varied heading spacing, leading/trailing whitespace"
+    },
+    {
+      "id": "clipboard-duplicate-images",
+      "type": "clipboard",
+      "input": "inputs/clipboard-duplicate-images.html",
+      "expected": "expected/clipboard-duplicate-images.md",
+      "imagesManifest": null,
+      "invariants": ["no-script-tags", "no-empty-image-src"],
+      "description": "HTML with same data URI referenced 3 times; all should resolve to one extracted image"
+    },
+    {
+      "id": "toc-word-generated",
+      "type": "clipboard",
+      "input": "inputs/toc-word-generated.html",
+      "expected": "expected/toc-word-generated.md",
+      "imagesManifest": null,
+      "invariants": ["no-script-tags", "no-mso-artifacts", "stable-anchors"],
+      "description": "Word-generated Table of Contents with #_Toc and #_heading links; zero dead TOC fragments should survive"
+    },
+    {
+      "id": "loop-table-block-cells",
+      "type": "clipboard",
+      "input": "inputs/loop-table-block-cells.html",
+      "expected": "expected/loop-table-block-cells.md",
+      "imagesManifest": null,
+      "invariants": ["no-script-tags", "no-inline-style", "gfm-table-pipe-consistency"],
+      "description": "Loop table with div/p wrappers and ul/li lists inside cells; all rows must remain as valid GFM table rows"
+    }
+  ]
+}

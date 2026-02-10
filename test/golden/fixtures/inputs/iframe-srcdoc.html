@@ -1,0 +1,21 @@
+<!--
+  Golden test fixture: iframe with srcdoc attribute.
+  Tests that the conversion pipeline extracts and converts
+  content from iframe srcdoc attributes.
+-->
+<div class="document-wrapper">
+  <h1>Document with Embedded Content</h1>
+  <p>The following content is embedded via an iframe srcdoc attribute:</p>
+
+  <iframe srcdoc="<h2>Embedded Section</h2><p>This content lives inside an <strong>iframe srcdoc</strong> attribute.</p><ul><li>Item one</li><li>Item two</li><li>Item three</li></ul><p>End of embedded content.</p>"
+    width="100%" height="300" frameborder="0">
+  </iframe>
+
+  <p>Content continues after the iframe.</p>
+
+  <iframe srcdoc="<table><tr><th>Name</th><th>Value</th></tr><tr><td>Alpha</td><td>100</td></tr><tr><td>Beta</td><td>200</td></tr></table>"
+    width="100%" height="200" frameborder="0">
+  </iframe>
+
+  <p>Final paragraph after all embedded content.</p>
+</div>
