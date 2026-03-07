@@ -17,8 +17,19 @@
     "docx",
     "word",
     "markdown",
-    "converter",
-    "document"
+    "docx to markdown",
+    "word to markdown",
+    "docx markdown",
+    "word markdown",
+    "markdown converter",
+    "docx converter",
+    "word converter",
+    "document converter",
+    "documentation",
+    "md",
+    "docs",
+    "convert",
+    "converter"
   ],
   "repository": {
     "type": "git",
