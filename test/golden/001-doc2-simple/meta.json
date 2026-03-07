@@ -1,0 +1,12 @@
+{
+  "description": "Simple document with basic formatting",
+  "source": "Word Desktop",
+  "knownIssues": [],
+  "skipReason": null,
+  "imageCount": 0,
+  "tags": ["basic", "simple"],
+  "tolerance": {
+    "ignoreWhitespace": true,
+    "ignoreImagePaths": false
+  }
+}

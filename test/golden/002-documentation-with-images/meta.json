@@ -1,0 +1,9 @@
+{
+  "description": "Imported from Documentación.docx",
+  "imageCount": 27,
+  "tags": ["images", "complex"],
+  "tolerance": {
+    "ignoreWhitespace": true,
+    "ignoreImagePaths": true
+  }
+}
