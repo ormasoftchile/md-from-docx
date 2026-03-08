@@ -130,5 +130,5 @@ Examples:
 
 // Run if called directly
 if (require.main === module) {
-  main();
+  void main();
 }

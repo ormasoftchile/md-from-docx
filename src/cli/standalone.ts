@@ -145,7 +145,7 @@ export async function convertDocxToMarkdown(docxPath: string): Promise<Standalon
         const filename = `image-${String(imageIndex).padStart(3, '0')}.${extension}`;
         imageFilenames.push(filename);
         
-        return image.read('base64').then((data) => {
+        return image.read('base64').then((_data) => {
           return {
             src: `${imagesFolderName}/${filename}`,
             alt: `Image ${imageIndex}`,
@@ -261,5 +261,5 @@ Examples:
 
 // Run if called directly
 if (require.main === module) {
-  main();
+  void main();
 }
