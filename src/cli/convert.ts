@@ -19,6 +19,9 @@ export const DEFAULT_OPTIONS: ConversionOptions = {
   pasteTarget: 'newFile',
   openAfterConversion: false,
   showNotifications: false,
+  markdownFlavor: 'gfm',
+  lineWrapWidth: 'none',
+  headingStrategy: 'preserve',
 };
 
 /**
